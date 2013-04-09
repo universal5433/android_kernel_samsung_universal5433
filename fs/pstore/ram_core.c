@@ -434,6 +434,9 @@ static void *persistent_ram_iomap(phys_addr_t start, size_t size,
 		return NULL;
 	}
 
+	buffer_start_add = buffer_start_add_locked;
+	buffer_size_add = buffer_size_add_locked;
+
 	if (memtype)
 		va = ioremap(start, size);
 	else
