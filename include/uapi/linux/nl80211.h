@@ -1798,6 +1798,8 @@ enum nl80211_attrs {
 	NL80211_ATTR_CRIT_PROT_ID,
 	NL80211_ATTR_MAX_CRIT_PROT_DURATION,
 
+	NL80211_ATTR_PEER_AID,
+
 	/* add attributes here, update the policy in nl80211.c */
 
 	NL80211_ATTR_HANDLE_DFS,
