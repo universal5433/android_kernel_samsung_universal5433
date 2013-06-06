@@ -112,7 +112,4 @@ struct zram {
 	struct zram_stats stats;
 };
 
-extern struct zram *zram_devices;
-unsigned int zram_get_num_devices(void);
-
 #endif
