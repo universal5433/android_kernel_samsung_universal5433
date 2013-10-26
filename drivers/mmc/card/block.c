@@ -2376,6 +2376,7 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 	struct mmc_host *host = card->host;
 	unsigned int cmd_flags = req ? req->cmd_flags : 0;
 	unsigned long flags;
+	unsigned int cmd_flags = req ? req->cmd_flags : 0;
 
 	if (card->ext_csd.cmdq_mode_en) {
 		mmc_claim_host(card->host);
@@ -2413,8 +2414,6 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 			ret = mmc_blk_issue_secdiscard_rq(mq, req);
 		else
 			ret = mmc_blk_issue_discard_rq(mq, req);
-		if (card->ext_csd.cmdq_mode_en)
-			mmc_release_host(card->host);
 	} else if (cmd_flags & REQ_FLUSH) {
 		/* complete ongoing async transfer before issuing flush */
 		if (card->host->areq || card->ext_csd.cmdq_mode_en)
@@ -2440,17 +2439,15 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 	}
 
 out:
-	if (!card->ext_csd.cmdq_mode_en) {
-		if ((!req && !(mq->flags & MMC_QUEUE_NEW_REQUEST)) ||
-		     (cmd_flags & MMC_REQ_SPECIAL_MASK))
-			/*
-			 * Release host when there are no more requests
-			 * and after special request(discard, flush) is done.
-			 * In case sepecial request, there is no reentry to
-			 * the 'mmc_blk_issue_rq' with 'mqrq_prev->req'.
-			 */
-			mmc_release_host(card->host);
-	}
+	if ((!req && !(mq->flags & MMC_QUEUE_NEW_REQUEST)) ||
+	     (cmd_flags & MMC_REQ_SPECIAL_MASK))
+		/*
+		 * Release host when there are no more requests
+		 * and after special request(discard, flush) is done.
+		 * In case sepecial request, there is no reentry to
+		 * the 'mmc_blk_issue_rq' with 'mqrq_prev->req'.
+		 */
+		mmc_release_host(card->host);
 	return ret;
 }
 
