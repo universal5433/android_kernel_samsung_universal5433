@@ -253,7 +253,6 @@ int ping_init_sock(struct sock *sk)
 {
 	struct net *net = sock_net(sk);
 	kgid_t group = current_egid();
-
 	struct group_info *group_info;
 	int i, j, count;
 	kgid_t low, high;
@@ -282,9 +281,8 @@ out_release_group:
 	put_group_info(group_info);
 	return ret;
 }
-EXPORT_SYMBOL_GPL(ping_init_sock);
 
-void ping_close(struct sock *sk, long timeout)
+static void ping_close(struct sock *sk, long timeout)
 {
 	pr_debug("ping_close(sk=%p,sk->num=%u)\n",
 		 inet_sk(sk), inet_sk(sk)->inet_num);
