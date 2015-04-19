@@ -1272,7 +1272,12 @@ static int check_unsafe_exec(struct linux_binprm *bprm)
 }
 
 static void bprm_fill_uid(struct linux_binprm *bprm)
+static void bprm_fill_uid(struct linux_binprm *bprm)
 {
+	struct inode *inode;
+	unsigned int mode;
+	kuid_t uid;
+	kgid_t gid;
 	struct inode *inode;
 	unsigned int mode;
 	kuid_t uid;
@@ -1285,7 +1290,7 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 	if (bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID)
 		return;
 
-	if (task_no_new_privs(current))
+	if (current->no_new_privs)
 		return;
 
 	inode = file_inode(bprm->file);
