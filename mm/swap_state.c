@@ -419,6 +419,12 @@ struct page *swapin_readahead(swp_entry_t entry, gfp_t gfp_mask,
 	unsigned long mask = is_swap_fast(entry) ? 0 : (1UL << page_cluster) - 1;
 	struct blk_plug plug;
 
+#ifdef CONFIG_ZSWAP
+	swap_cache_miss(vma);
+	if (swap_cache_skip_readahead(vma))
+		goto skip;
+#endif
+
 	/* Read a page_cluster sized and aligned cluster around offset. */
 	start_offset = offset & ~mask;
 	end_offset = offset | mask;
