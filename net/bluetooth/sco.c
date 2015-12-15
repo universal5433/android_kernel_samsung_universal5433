@@ -448,20 +448,19 @@ static int sco_sock_create(struct net *net, struct socket *sock, int protocol,
 	return 0;
 }
 
-static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int alen)
+static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int addr_len)
 {
-	struct sockaddr_sco sa;
+	struct sockaddr_sco *sa = (struct sockaddr_sco *) addr;
 	struct sock *sk = sock->sk;
-	int len, err = 0;
+	int err = 0;
 
-	BT_DBG("sk %p %pMR", sk, &sa.sco_bdaddr);
+	BT_DBG("sk %p %pMR", sk, &sa->sco_bdaddr);
 
 	if (!addr || addr->sa_family != AF_BLUETOOTH)
 		return -EINVAL;
 
-	memset(&sa, 0, sizeof(sa));
-	len = min_t(unsigned int, sizeof(sa), alen);
-	memcpy(&sa, addr, len);
+	if (addr_len < sizeof(struct sockaddr_sco))
+		return -EINVAL;
 
 	lock_sock(sk);
 
@@ -475,8 +474,7 @@ static int sco_sock_bind(struct socket *sock, struct sockaddr *addr, int alen)
 		goto done;
 	}
 
-	bacpy(&bt_sk(sk)->src, &sa.sco_bdaddr);
-	sco_pi(sk)->pkt_type = sa.sco_pkt_type;
+	bacpy(&bt_sk(sk)->src, &sa->sco_bdaddr);
 
 	sk->sk_state = BT_BOUND;
 
