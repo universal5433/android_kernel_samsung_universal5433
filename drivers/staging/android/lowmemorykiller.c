@@ -67,78 +67,6 @@ static unsigned long lowmem_deathpending_timeout;
 			pr_info(x);			\
 	} while (0)
 
-
-static int can_use_cma_pages(struct zone *zone, gfp_t gfp_mask)
-{
-	int can_use = 0;
-	int mtype = allocflags_to_migratetype(gfp_mask);
-	int i = 0;
-	int *mtype_fallbacks = get_migratetype_fallbacks(mtype);
-
-	if (is_migrate_cma(mtype)) {
-		can_use = 1;
-	} else {
-		for (i = 0;; i++) {
-			int fallbacktype = mtype_fallbacks[i];
-
-			if (is_migrate_cma(fallbacktype)) {
-				can_use = 1;
-				break;
-			}
-
-			if (fallbacktype == MIGRATE_RESERVE)
-				break;
-		}
-	}
-	return can_use;
-}
-
-
-static int nr_free_zone_pages(struct zone *zone, gfp_t gfp_mask)
-{
-	int sum = zone_page_state(zone, NR_FREE_PAGES);
-
-	if (!can_use_cma_pages(zone, gfp_mask))
-		sum -= zone_page_state(zone, NR_FREE_CMA_PAGES);
-
-	return sum;
-}
-
-
-static int lmk_nr_free_pages(gfp_t gfp_mask)
-{
-	struct zoneref *z;
-	struct zone *zone;
-	int sum = 0;
-
-	struct zonelist *zonelist = node_zonelist(numa_node_id(), gfp_mask);
-
-	for_each_zone_zonelist(zone, z, zonelist, gfp_zone(gfp_mask)) {
-		sum += nr_free_zone_pages(zone, gfp_mask);
-	}
-
-	return sum;
-}
-
-
-static int test_task_flag(struct task_struct *p, int flag)
-{
-	struct task_struct *t = p;
-
-	do {
-		task_lock(t);
-		if (test_tsk_thread_flag(t, flag)) {
-			task_unlock(t);
-			return 1;
-		}
-		task_unlock(t);
-	} while_each_thread(p, t);
-
-	return 0;
-}
-
-static DEFINE_MUTEX(scan_mutex);
-
 static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 {
 	struct task_struct *tsk;
@@ -211,6 +139,7 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 		if (tsk->flags & PF_KTHREAD)
 			continue;
 
+<<<<<<< HEAD
 		/* if task no longer has any memory ignore it */
 		if (test_task_flag(tsk, TIF_MM_RELEASED))
 			continue;
@@ -225,10 +154,18 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			}
 		}
 
+=======
+>>>>>>> 8ee9356321ca... Revert "android/lowmemorykiller: Check all tasks for death pending"
 		p = find_lock_task_mm(tsk);
 		if (!p)
 			continue;
 
+		if (test_tsk_thread_flag(p, TIF_MEMDIE) &&
+		    time_before_eq(jiffies, lowmem_deathpending_timeout)) {
+			task_unlock(p);
+			rcu_read_unlock();
+			return 0;
+		}
 		oom_score_adj = p->signal->oom_score_adj;
 		if (oom_score_adj < min_score_adj) {
 			task_unlock(p);
