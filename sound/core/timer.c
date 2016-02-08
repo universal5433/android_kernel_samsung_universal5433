@@ -413,37 +413,12 @@ static void snd_timer_notify1(struct snd_timer_instance *ti, int event)
 	list_for_each_entry(ts, &ti->slave_active_head, active_list)
 		if (ts->ccallback)
 			ts->ccallback(ts, event + 100, &tstamp, resolution);
+	spin_unlock_irqrestore(&timer->lock, flags);
 }
 
-/* start/continue a master timer */
-static int snd_timer_start1(struct snd_timer_instance *timeri,
-			    bool start, unsigned long ticks)
+static int snd_timer_start1(struct snd_timer *timer, struct snd_timer_instance *timeri,
+			    unsigned long sticks)
 {
-	struct snd_timer *timer;
-	int result;
-	unsigned long flags;
-
-	timer = timeri->timer;
-	if (!timer)
-		return -EINVAL;
-
-	spin_lock_irqsave(&timer->lock, flags);
-	if (timer->card && timer->card->shutdown) {
-		result = -ENODEV;
-		goto unlock;
-	}
-	if (timeri->flags & (SNDRV_TIMER_IFLG_RUNNING |
-			     SNDRV_TIMER_IFLG_START)) {
-		result = -EBUSY;
-		goto unlock;
-	}
-
-	if (start)
-		timeri->ticks = timeri->cticks = ticks;
-	else if (!timeri->cticks)
-		timeri->cticks = 1;
-	timeri->pticks = 0;
-
 	list_move_tail(&timeri->active_list, &timer->active_list_head);
 	if (timer->running) {
 		if (timer->hw.flags & SNDRV_TIMER_HW_SLAVE)
