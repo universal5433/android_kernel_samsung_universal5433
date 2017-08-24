@@ -198,4 +198,7 @@ source "drivers/irled/Kconfig"
 
 source "drivers/ice40lm/Kconfig"
 
+source "drivers/soc/Kconfig"
+
+source "drivers/android/Kconfig"
 endmenu
