@@ -30,7 +30,9 @@
 #include <mach/exynos-dwmci.h>
 #include <mach/exynos-pm.h>
 #include <mach/pinctrl-samsung.h>
+#ifndef CONFIG_MMC_TRELTE
 #include <mach/smc.h>
+#endif
 
 #include "dw_mmc.h"
 #include "dw_mmc-pltfm.h"
@@ -44,8 +46,9 @@ unsigned int dw_mci_save_sfr[3][30];
 extern void dw_mci_ciu_reset(struct device *dev, struct dw_mci *host);
 extern bool dw_mci_fifo_reset(struct device *dev, struct dw_mci *host);
 extern void dw_mci_idma_reset_dma(struct dw_mci *host);
-
+#ifndef CONFIG_MMC_TRELTE
 extern uint32_t mmc0_reg, mmc2_reg;
+#endif
 
 static int dw_mci_exynos_priv_init(struct dw_mci *host)
 {
@@ -182,6 +185,9 @@ static void exynos_sfr_save(unsigned int i)
 #if defined(CONFIG_SOC_EXYNOS5433)
 	dw_mci_save_sfr[i][15] = mci_readl(host, DBADDRL);
 	dw_mci_save_sfr[i][16] = mci_readl(host, DBADDRU);
+#ifdef CONFIG_MMC_TRELTE
+	dw_mci_save_sfr[i][20] = mci_readl(host, MPSECURITY);
+#endif
 #else
 	dw_mci_save_sfr[i][15] = mci_readl(host, DBADDR);
 #endif
@@ -319,6 +325,9 @@ static void exynos_sfr_restore(unsigned int i)
 	mci_writel(host, DBADDRL, dw_mci_save_sfr[i][15]);
 	mci_writel(host, DBADDRU, dw_mci_save_sfr[i][16]);
 	if (drv_data && drv_data->cfg_smu) {
+#ifdef CONFIG_MMC_TRELTE
+		mci_writel(host, MPSECURITY, dw_mci_save_sfr[i][20]);
+#endif
 		dw_mci_exynos_smu_reset(host);
 		drv_data->cfg_smu(host);
 	}
@@ -461,7 +470,11 @@ void dw_mci_exynos_unregister_notifier(struct dw_mci *host)
  */
 void dw_mci_exynos_cfg_smu(struct dw_mci *host)
 {
+#ifdef CONFIG_MMC_TRELTE
+	volatile unsigned int reg;
+#else
 	int ret;
+#endif
 
 #ifdef CONFIG_MMC_DW_FMP_DM_CRYPT
 	if (!((host->pdata->quirks & DW_MCI_QUIRK_USE_SMU) ||
@@ -472,6 +485,11 @@ void dw_mci_exynos_cfg_smu(struct dw_mci *host)
 		return;
 #endif
 
+#ifdef CONFIG_MMC_TRELTE
+	reg = __raw_readl(host->regs + SDMMC_MPSECURITY);
+ 	/* Extended Descriptor On */
+	mci_writel(host, MPSECURITY, reg | (1 << 31));
+#else
 	if ((uint32_t)host->regs == mmc0_reg)
 		ret = exynos_smc(SMC_CMD_REG, SMC_REG_ID_SFR_W(EMMC0_FMP), 0, 0);
 	else if ((uint32_t)host->regs == mmc2_reg)
@@ -482,7 +500,7 @@ void dw_mci_exynos_cfg_smu(struct dw_mci *host)
 	}
 	if (ret)
 		dev_err(host->dev, "Fail to smc call for FMP SECURITY\n");
-
+#endif
 #ifndef CONFIG_MMC_DW_FMP_DM_CRYPT
 	mci_writel(host, MPSBEGIN0, 0);
 	mci_writel(host, MPSEND0, DWMCI_BLOCK_NUM);
@@ -553,6 +571,10 @@ static void dw_mci_exynos_register_dump(struct dw_mci *host)
 	if (is_smu) {
 		dev_err(host->dev, ": EMMCP_BASE:	0x%08x\n",
 			mci_readl(host, EMMCP_BASE));
+#ifdef CONFIG_MMC_TRELTE
+		dev_err(host->dev, ": MPSECURITY:	0x%08x\n",
+			mci_readl(host, MPSECURITY));
+#endif
 		dev_err(host->dev, ": MPSTAT:	0x%08x\n",
 			mci_readl(host, MPSTAT));
 		for (i = 0; i < 8; i++) {

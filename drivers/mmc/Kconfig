@@ -24,6 +24,12 @@ config MMC_SUPPORT_STLOG
  	depends on MMC && PROC_STLOG
  	default y
 
+config MMC_TRELTE
+	bool "Samsung Note4 MMC Support (Exynos variant)"
+	default n
+	help
+	Say Y here, if you compile kernel for Samsung Note4. Do not touch the value if unsure.
+
 if MMC
 
 source "drivers/mmc/core/Kconfig"
