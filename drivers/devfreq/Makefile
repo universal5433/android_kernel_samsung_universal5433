@@ -12,3 +12,6 @@ obj-$(CONFIG_ARM_EXYNOS5422_BUS_DEVFREQ)	+= exynos5422_bus_mif.o exynos5422_bus_
 obj-$(CONFIG_ARM_EXYNOS5430_BUS_DEVFREQ)	+= exynos5430_bus_mif.o exynos5430_bus_int.o exynos5430_bus_disp.o exynos5430_bus_isp.o exynos5430_ppmu.o exynos_ppmu2.o
 obj-$(CONFIG_ARM_EXYNOS5433_BUS_DEVFREQ)	+= exynos5433_bus.o exynos5_bus_mif.o exynos5_bus_int.o exynos5_bus_disp.o exynos5_bus_isp.o exynos5433_ppmu.o exynos_ppmu_fw.o FW_exynos_ppmu.o
 obj-$(CONFIG_SAMSUNG_NOCP_MONITOR) += nocp_monitor.o monitor.o
+
+# DEVFREQ Boost
+obj-$(CONFIG_DEVFREQ_BOOST)		+= devfreq_boost.o
