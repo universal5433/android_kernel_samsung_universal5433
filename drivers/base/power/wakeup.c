@@ -27,26 +27,32 @@ module_param(enable_sensorhub_wl, bool, 0644);
 static bool enable_ssp_wl = true;
 module_param(enable_ssp_wl, bool, 0644);
 
-static bool enable_mmc0_detect_wl = true;
-module_param(enable_mmc0_detect_wl, bool, 0644);
+static bool enable_bcm4773_wl = true;
+module_param(enable_bcm4773_wl, bool, 0644);
 
-static bool enable_wlan_rx_wake_wl = true;
-module_param(enable_wlan_rx_wake_wl, bool, 0644);
+static bool enable_lli_pm_wl = true;
+module_param(enable_lli_pm_wl, bool, 0644);
 
-static bool enable_wlan_ctrl_wake_wl = true;
-module_param(enable_wlan_ctrl_wake_wl, bool, 0644);
+static bool enable_radio_interface_wl = true;
+module_param(enable_radio_interface_wl, bool, 0644);
 
-static bool enable_wlan_wake_wl = true;
-module_param(enable_wlan_wake_wl, bool, 0644);
+static bool enable_umts_ipc0_wl = true;
+module_param(enable_umts_ipc0_wl, bool, 0644);
 
-static bool enable_wlan_wd_wake_wl = true;
-module_param(enable_wlan_wd_wake_wl, bool, 0644);
+static bool enable_power_manager_service_wl = true;
+module_param(enable_power_manager_service_wl, bool, 0644);
 
-static bool enable_bcmdhd4358_wl = true;
-module_param(enable_bcmdhd4358_wl, bool, 0644);
+static bool enable_wlan_rx_wake_ws = true;
+module_param(enable_wlan_rx_wake_ws, bool, 0644);
 
-static bool enable_bluedroid_timer_wl = true;
-module_param(enable_bluedroid_timer_wl, bool, 0644);
+static bool enable_wlan_ctrl_wake_ws = true;
+module_param(enable_wlan_ctrl_wake_ws, bool, 0644);
+
+static bool enable_wlan_wake_ws = true;
+module_param(enable_wlan_wake_ws, bool, 0644);
+
+static bool enable_bluedroid_timer_ws = true;
+module_param(enable_bluedroid_timer_ws, bool, 0644);
 
 #ifdef CONFIG_BOEFFLA_WL_BLOCKER
 #include "boeffla_wl_blocker.h"
@@ -422,32 +428,82 @@ static void wakeup_source_activate(struct wakeup_source *ws)
 {
 	unsigned int cec;
 
-	if (!enable_sensorhub_wl && !strcmp(ws->name, "ssp_sensorhub_wake_lock"))
+	if (!enable_sensorhub_wl && !strcmp(ws->name, "ssp_sensorhub_wake_lock")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source sensorhub activation skipped\n");
 		return;
-	
-	if (!enable_ssp_wl && !strcmp(ws->name, "ssp_wake_lock"))
-		return;
+	}
 
-	if (!enable_mmc0_detect_wl && !strcmp(ws->name, "mmc0_detect"))
+	if (!enable_ssp_wl && !strcmp(ws->name, "ssp_wake_lock")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source ssp activation skipped\n");
 		return;
+	}
 
-	if (!enable_wlan_wake_wl && !strcmp(ws->name, "wlan_wake"))
+	if (!enable_bcm4773_wl && !strcmp(ws->name, "bcm4773_wake_lock")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source bcm4773 activation skipped\n");
 		return;
+	}
 
-	if (!enable_wlan_ctrl_wake_wl && !strcmp(ws->name, "wlan_ctrl_wake"))
+	if (!enable_lli_pm_wl && !strcmp(ws->name, "lli_pm_wlock")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source lli_pm activation skipped\n");
 		return;
+	}
 
-	if (!enable_wlan_rx_wake_wl && !strcmp(ws->name, "wlan_rx_wake"))
+	if (!enable_radio_interface_wl && !strcmp(ws->name, "radio-interface")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source radio-interface activation skipped\n");
 		return;
+	}
 
-	if (!enable_wlan_wd_wake_wl && !strcmp(ws->name, "wlan_wd_wake"))
+	if (!enable_umts_ipc0_wl && !strcmp(ws->name, "umts_ipc0")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source umts_ipc0 activation skipped\n");
 		return;
+	}
 
-	if (!enable_bcmdhd4358_wl && !strcmp(ws->name, "bcmdhd4358_wl"))
+	if (!enable_power_manager_service_wl && !strcmp(ws->name, "PowerManagerService.WakeLocks")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source PowerManagerService.WakeLocks activation skipped\n");
 		return;
+	}
 
-	if (!enable_bluedroid_timer_wl && !strcmp(ws->name, "bluedroid_timer"))
+	if (!enable_wlan_rx_wake_ws && !strcmp(ws->name, "wlan_rx_wake")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source wlan_rx_wake activation skipped\n");
 		return;
+	}
+
+	if (!enable_wlan_ctrl_wake_ws && !strcmp(ws->name, "wlan_ctrl_wake")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source wlan_ctrl_wake activation skipped\n");
+		return;
+	}
+
+	if (!enable_wlan_wake_ws && !strcmp(ws->name, "wlan_wake")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source wlan_wake activation skipped\n");
+		return;
+	}
+
+	if (!enable_bluedroid_timer_ws && !strcmp(ws->name, "bluedroid_timer")) {
+		if (ws->active)
+			wakeup_source_deactivate(ws);
+			pr_info("wakeup source bluedroid_timer activation skipped\n");
+		return;
+	}
 
 	/*
 	 * active wakeup source should bring the system
