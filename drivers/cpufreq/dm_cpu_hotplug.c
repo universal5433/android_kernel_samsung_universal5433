@@ -55,8 +55,14 @@ static DEFINE_MUTEX(dm_hotplug_lock);
 static DEFINE_MUTEX(thread_lock);
 static DEFINE_MUTEX(big_hotplug_lock);
 static DEFINE_MUTEX(little_hotplug_in_lock);
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static DEFINE_MUTEX(thread_manage_lock);
+#endif
 
 static struct task_struct *dm_hotplug_task;
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static bool thread_start = false;
+#endif
 static unsigned int low_stay_threshold = DEFAULT_LOW_STAY_THRSHD;
 static int cpu_util[NR_CPUS];
 static unsigned int cur_load_freq = 0;
@@ -109,6 +115,9 @@ static unsigned int delay = POLLING_MSEC_DISP_ON;
 static struct workqueue_struct *hotplug_wq;
 #endif
 static struct workqueue_struct *force_hotplug_wq;
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static struct workqueue_struct *thread_manage_wq;
+#endif
 
 static int dm_hotplug_disable = 0;
 
@@ -484,6 +493,47 @@ static inline cputime64_t get_cpu_iowait_time(unsigned int cpu, cputime64_t *wal
 	return iowait_time;
 }
 
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+static void thread_manage_work(struct work_struct *work)
+{
+	mutex_lock(&thread_manage_lock);
+	if (thread_start) {
+		dm_hotplug_task =
+			kthread_create(on_run, NULL, "thread_hotplug");
+		if (IS_ERR(dm_hotplug_task)) {
+			pr_err("Failed in creation of thread.\n");
+			return;
+		}
+
+		wake_up_process(dm_hotplug_task);
+		
+				if (!dynamic_hotplug(CMD_LOW_POWER))
+			prev_cmd = CMD_LOW_POWER;
+			
+	} else {
+		if (dm_hotplug_task) {
+			kthread_stop(dm_hotplug_task);
+			dm_hotplug_task = NULL;
+			if (!dynamic_hotplug(CMD_NORMAL))
+				prev_cmd = CMD_NORMAL;
+		}
+		dm_hotplug_disable = 1;
+	}
+	mutex_unlock(&thread_manage_lock);
+}
+
+static DECLARE_WORK(manage_work, thread_manage_work);
+#endif
+
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+	if (thread_manage_wq) {
+		if (work_pending(&manage_work))
+			flush_work(&manage_work);
+		thread_start = false;
+		queue_work(thread_manage_wq, &manage_work);
+	}
+#endif
+
 static int fb_state_change(struct notifier_block *nb,
 		unsigned long val, void *data)
 {
@@ -508,6 +558,16 @@ static int fb_state_change(struct notifier_block *nb,
 		lcd_is_on = false;
 		pr_info("LCD is off\n");
 		delay = POLLING_MSEC_DISP_OFF;
+
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+		dm_hotplug_disable = 0;
+		if (thread_manage_wq) {
+			if (work_pending(&manage_work))
+				flush_work(&manage_work);
+			thread_start = true;
+			queue_work(thread_manage_wq, &manage_work);
+		}
+#endif
 		break;
 	case FB_BLANK_UNBLANK:
 		/*
@@ -1200,12 +1260,14 @@ static int __init dm_cpu_hotplug_init(void)
 	struct cpufreq_policy *policy;
 #endif
 
+#ifndef CONFIG_HOTPLUG_THREAD_STOP
 	dm_hotplug_task =
 		kthread_create(on_run, NULL, "thread_hotplug");
 	if (IS_ERR(dm_hotplug_task)) {
 		pr_err("Failed in creation of thread.\n");
 		return -EINVAL;
 	}
+#endif
 
 	fb_register_client(&fb_block);
 
@@ -1285,6 +1347,14 @@ static int __init dm_cpu_hotplug_init(void)
 		goto err_force_wq;
 	}
 
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+	thread_manage_wq = create_singlethread_workqueue("thread-manage");
+	if (!thread_manage_wq) {
+		ret = -ENOMEM;
+		goto err_thread_wq;
+	}
+#endif
+
 	register_pm_notifier(&exynos_dm_hotplug_nb);
 	register_reboot_notifier(&exynos_dm_hotplug_reboot_nb);
 
@@ -1295,9 +1365,15 @@ static int __init dm_cpu_hotplug_init(void)
 		pr_err("%s: debugfs_create_file() failed\n", __func__);
 	}
 
+#ifndef CONFIG_HOTPLUG_THREAD_STOP
 	wake_up_process(dm_hotplug_task);
+#endif
 
 	return ret;
+#ifdef CONFIG_HOTPLUG_THREAD_STOP
+err_thread_wq:
+	destroy_workqueue(force_hotplug_wq);
+#endif
 err_force_wq:
 #if defined(CONFIG_SCHED_HMP)
 	destroy_workqueue(hotplug_wq);
@@ -1323,7 +1399,9 @@ err_enable_dm_hotplug:
 err:
 	pr_err("%s: failed to create sysfs interface\n", __func__);
 	fb_unregister_client(&fb_block);
+#ifndef CONFIG_HOTPLUG_THREAD_STOP
 	kthread_stop(dm_hotplug_task);
+#endif
 
 	return ret;
 }
