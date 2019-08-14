@@ -173,11 +173,5 @@ obj-$(CONFIG_SENSORS_FINGERPRINT)	+= fingerprint/
 obj-$(CONFIG_SENSORS_SSP)		+= sensorhub/
 obj-$(CONFIG_SENSORS_CORE)	+= sensors/
 
-obj-$(CONFIG_MHI)		+= mhi/
-obj-$(CONFIG_ESOC)		+= esoc/
-
-#LED MATRIX FGPA Driver
-obj-$(CONFIG_ICE5_FPGA_LED_MATRIX)	+= ledmatrix/
-
 # Android non-staging drivers
 obj-$(CONFIG_ANDROID)	+= android/
