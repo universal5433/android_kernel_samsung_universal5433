@@ -137,4 +137,11 @@ config SEC_SELINUX
 	default n
 	help
 	  This option adds sec selinux feature
+	  
+config SECURITY_SELINUX_PERMISSIVE
+	bool "SELinux permissive"
+	depends on SECURITY_SELINUX
+	default n
+	help
+	  This option switches SELinux to permissive mode
 
