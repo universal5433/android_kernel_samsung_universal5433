@@ -423,6 +423,42 @@ config SAMSUNG_PRODUCT_SHIP
 	bool "set up for product shipping"
 	default n
 
+config BOARD_GTS28WIFI
+	bool "Samsung Tab S2 8.0 WIFI"
+	default n
+	
+config BOARD_GTS28LTEXX
+	bool "Samsung Tab S2 8.0 LTE"
+	default n
+	
+config BOARD_GTS210WIFI
+	bool "Samsung Tab S2 9.7 WIFI"
+	default n
+
+config BOARD_GTS210LTEXX
+	bool "Samsung Tab S2 9.7 LTE"
+	default n
+
+config BOARD_TRELTEXX
+	bool "Samsung Galaxy N4 LTE
+	default n
+
+config BOARD_TRHPLTE
+	bool "Samsung Galaxy N4 LTE (N910U)
+	default n
+
+config BOARD_TRELTESKT
+	bool "Samsung Galaxy N4 LTE SKT (N910S/L/K)
+	default n
+
+config BOARD_TBELTESKT
+	bool "Samsung Galaxy N4 EDGE LTE SKT (N910S/L/K)
+	default n
+
+config BOARD_TRE3CALTELGT
+	bool "Samsung Galaxy N4 S-LTE SKT (N910C)
+	default n
+
 if EXYNOS_ATAGS
 
 config EXYNOS_DEV_DMA
