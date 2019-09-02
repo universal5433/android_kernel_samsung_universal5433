@@ -31,8 +31,10 @@
 #include <linux/of.h>
 #include <linux/of_fdt.h>
 #include <linux/plist.h>
+#ifndef CONFIG_MFC_TRELTE
 #include <linux/kref.h>
 #include <mach/smc.h>
+#endif
 
 #include <asm/pgtable.h>
 
@@ -418,11 +420,15 @@ struct ion_exynos_cmadata {
 	int id;
 	char name[MAX_CONTIG_NAME + 1];
 	bool isolated_on_boot; /* set on boot-time. unset by isolated_store() */
+#ifndef CONFIG_MFC_TRELTE
 	bool secure;
+#endif
 	struct mutex lock;
+#ifndef CONFIG_MFC_TRELTE
 	struct kref secure_ref;
+#endif
 };
-
+#ifndef CONFIG_MFC_TRELTE
 static int __ion_secure_protect(struct device *dev)
 {
 	struct cma_info info;
@@ -529,6 +535,7 @@ int ion_is_region_available(struct device *dev, unsigned long flags)
 		}
 	}
 }
+#endif
 static int ion_cma_device_name_match(struct device *dev, void *data)
 {
 	struct ion_exynos_cmadata *cmadata = dev_get_drvdata(dev);
@@ -663,9 +670,15 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 	int ret = 0;
 
 	/* fixup of old DRM flags */
+#ifdef CONFIG_MFC_TRELTE
+	if (flags & (ION_EXYNOS_FIMD_VIDEO_MASK | ION_EXYNOS_MFC_OUTPUT_MASK |
+			ION_EXYNOS_MFC_INPUT_MASK))
+		id = ION_EXYNOS_ID_VIDEO;
+#else
 	if (flags & (ION_EXYNOS_FIMD_VIDEO_MASK | ION_EXYNOS_MFC_OUTPUT_MASK |
 			ION_EXYNOS_MFC_INPUT_MASK | ION_EXYNOS_VIDEO_EXT2_MASK))
 		id = ION_EXYNOS_ID_VIDEO;
+#endif
 
 	dev = device_find_child(contig_heap->dev, &id, ion_cma_device_id_match);
 	if (!dev) {
@@ -678,9 +691,11 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 	if (!align)
 		align = PAGE_SIZE;
 
+#ifndef CONFIG_MFC_TRELTE
 	ret = ion_is_region_available(dev, flags);
 	if (ret != 0)
 		return ret;
+#endif
 
 	buffer->priv_virt = dma_alloc_from_contiguous(dev, len >> PAGE_SHIFT,
 					      get_order(align));
@@ -697,6 +712,8 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 				__func__, dev_name(dev));
 		return -ENOMEM;
 	}
+
+#ifndef CONFIG_MFC_TRELTE
 	if (buffer->flags & ION_FLAG_PROTECTED)
 		ret = ion_secure_protect(dev);
 
@@ -704,6 +721,7 @@ static int ion_exynos_contig_heap_allocate(struct ion_heap *heap,
 		dma_release_from_contiguous(
 			dev, buffer->priv_virt, len >> PAGE_SHIFT);
 	}
+#endif
 	return ret;
 }
 
@@ -715,9 +733,15 @@ static void ion_exynos_contig_heap_free(struct ion_buffer *buffer)
 	struct device *dev;
 
 	/* fixup of old DRM flags */
+#ifdef CONFIG_MFC_TRELTE
+	if (buffer->flags & (ION_EXYNOS_FIMD_VIDEO_MASK | ION_EXYNOS_MFC_OUTPUT_MASK |
+				ION_EXYNOS_MFC_INPUT_MASK))
+		id = ION_EXYNOS_ID_VIDEO;
+#else
 	if (buffer->flags & (ION_EXYNOS_FIMD_VIDEO_MASK | ION_EXYNOS_MFC_OUTPUT_MASK |
 				ION_EXYNOS_MFC_INPUT_MASK | ION_EXYNOS_VIDEO_EXT2_MASK))
 		id = ION_EXYNOS_ID_VIDEO;
+#endif
 
 	dev = device_find_child(contig_heap->dev, &id, ion_cma_device_id_match);
 	if (!dev) {
@@ -732,8 +756,10 @@ static void ion_exynos_contig_heap_free(struct ion_buffer *buffer)
 			page_to_phys((struct page *)buffer->priv_virt),
 			dev_name(dev));
 	}
+#ifndef CONFIG_MFC_TRELTE
 	if (buffer->flags & ION_FLAG_PROTECTED)
 		ion_secure_unprotect(dev);
+#endif
 }
 
 static int ion_exynos_contig_heap_phys(struct ion_heap *heap,
@@ -1366,7 +1392,9 @@ struct exynos_ion_contig_region {
 	phys_addr_t base;
 	struct device dev;
 	bool isolated;
+#ifndef CONFIG_MFC_TRELTE
 	bool secure;
+#endif
 };
 
 static int contig_region_cursor __initdata;
@@ -1451,6 +1479,7 @@ static int __init __fdt_init_exynos_ion(unsigned long node, const char *uname,
 		}
 
 	}
+#ifndef CONFIG_MFC_TRELTE
 	prop = of_get_flat_dt_prop(node, "secure", &len);
 	for (i = 0; prop && (unsigned long)i < (len / sizeof(long)); i++) {
 		int id;
@@ -1466,6 +1495,7 @@ static int __init __fdt_init_exynos_ion(unsigned long node, const char *uname,
 		}
 
 	}
+#endif
 
 	return 0;
 }
@@ -1621,6 +1651,10 @@ int __init init_exynos_ion_contig_heap(void)
 		contig_region_cursor++;
 	}
 
+#ifdef CONFIG_MFC_TRELTE
+	pr_info("init_exynos_ion_contig_heap");
+#endif
+
 	return 0;
 }
 #endif	/* CONFIG_ION_EXYNOS_OF */
@@ -1726,8 +1760,10 @@ static int __init ion_exynos_contigheap_init(void)
 		drvdata->id = exynos_ion_contig_region[i].id;
 		strncpy(drvdata->name, exynos_ion_contig_region[i].name,
 			MAX_CONTIG_NAME);
+#ifndef CONFIG_MFC_TRELTE
 		drvdata->secure = exynos_ion_contig_region[i].secure;
 		atomic_set(&drvdata->secure_ref.refcount, 0);
+#endif
 
 		dev = device_create(ion_cma_class,
 				__init_contig_heap->dev, 0, drvdata,

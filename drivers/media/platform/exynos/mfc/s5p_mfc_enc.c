@@ -898,8 +898,13 @@ static struct v4l2_queryctrl controls[] = {
 		.id = V4L2_CID_MPEG_VIDEO_QOS_RATIO,
 		.type = V4L2_CTRL_TYPE_INTEGER,
 		.name = "QoS ratio value",
+#ifndef CONFIG_MFC_TRELTE
 		.minimum = 0,
 		.maximum = 1000,
+#else
+		.minimum = 20,
+		.maximum = 200,
+#endif
 		.step = 10,
 		.default_value = 100,
 	},
@@ -1499,13 +1504,15 @@ static struct s5p_mfc_ctrl_cfg mfc_ctrl_list[] = {
 
 int s5p_mfc_enc_ctx_ready(struct s5p_mfc_ctx *ctx)
 {
-	struct s5p_mfc_dev *dev = ctx->dev;	
+#ifndef CONFIG_MFC_TRELTE
+	struct s5p_mfc_dev *dev = ctx->dev;
+#endif	
 	struct s5p_mfc_enc *enc = ctx->enc_priv;
 	struct s5p_mfc_enc_params *p = &enc->params;
 
 	mfc_debug(2, "src=%d, dst=%d, state=%d\n",
 		  ctx->src_queue_cnt, ctx->dst_queue_cnt, ctx->state);
-
+#ifndef CONFIG_MFC_TRELTE
 	/* Skip ready check temporally */
 	spin_lock_irq(&dev->condlock);
 	if (test_bit(ctx->num, &dev->ctx_stop_bits)) {
@@ -1513,6 +1520,7 @@ int s5p_mfc_enc_ctx_ready(struct s5p_mfc_ctx *ctx)
 		return 0;
 	}
 	spin_unlock_irq(&dev->condlock);		  
+#endif
 
 	/* context is ready to make header */
 	if (ctx->state == MFCINST_GOT_INST && ctx->dst_queue_cnt >= 1) {
@@ -2788,12 +2796,12 @@ static int vidioc_qbuf(struct file *file, void *priv, struct v4l2_buffer *buf)
 		mfc_err_ctx("Call on QBUF after unrecoverable error.\n");
 		return -EIO;
 	}
-
+#ifndef CONFIG_MFC_TRELTE
 	if (V4L2_TYPE_IS_MULTIPLANAR(buf->type) && !buf->length) {
 		mfc_err_ctx("multiplanar but length is zero\n");
 		return -EIO;
 	}
-
+#endif
 	if (buf->type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
 		ret = vb2_qbuf(&ctx->vq_src, buf);
 		if (!ret) {
@@ -2841,10 +2849,16 @@ static int vidioc_qbuf(struct file *file, void *priv, struct v4l2_buffer *buf)
 calc_again:
 #endif
 			if (ctx->last_framerate != 0 &&
+#ifndef CONFIG_MFC_TRELTE
 				((ctx->last_framerate != ctx->framerate) || ctx->qos_changed)) {
 				mfc_debug(2, "fps changed: %d -> %d (%s)\n",
 					ctx->framerate, ctx->last_framerate,
 					ctx->use_extra_qos ? "extra" : "normal");
+#else
+				ctx->last_framerate != ctx->framerate) {
+				mfc_debug(2, "fps changed: %d -> %d\n",
+					ctx->framerate, ctx->last_framerate);
+#endif
 				ctx->framerate = ctx->last_framerate;
 				s5p_mfc_qos_on(ctx);
 			}
@@ -3568,6 +3582,7 @@ static int set_ctrl_val(struct s5p_mfc_ctx *ctx, struct v4l2_control *ctrl)
 			ctx->cacheable = 0;
 		break;
 	case V4L2_CID_MPEG_VIDEO_QOS_RATIO:
+#ifndef CONFIG_MFC_TRELTE
 		if (ctrl->value > 150)
 			ctrl->value = 1000;
 		if (ctrl->value == 0) {
@@ -3578,8 +3593,11 @@ static int set_ctrl_val(struct s5p_mfc_ctx *ctx, struct v4l2_control *ctrl)
 			ctx->use_extra_qos = 0;
 			mfc_info_ctx("QOS_RATIO is %d, use extra qos!\n", ctrl->value);
 		}
+#endif
 		ctx->qos_ratio = ctrl->value;
+#ifndef CONFIG_MFC_TRELTE
 		ctx->qos_changed = 1;
+#endif
 		break;
 	case V4L2_CID_MPEG_VIDEO_H264_MAX_QP:
 	case V4L2_CID_MPEG_VIDEO_H263_MAX_QP:
@@ -4077,6 +4095,7 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 	struct s5p_mfc_enc *enc = ctx->enc_priv;
 	int index = 0;
 	int aborted = 0;
+#ifndef CONFIG_MFC_TRELTE
 	int ret = 0;	
 
 	mfc_info_ctx("enc stop_streaming is called, hw_lock : %d, type : %d\n",
@@ -4101,6 +4120,23 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 		if (ret == 0)
 			mfc_err_ctx("wait for event failed\n");		
 	}
+#else
+	if (need_to_wait_frame_start(ctx)) {
+		ctx->state = MFCINST_ABORT;
+		if (s5p_mfc_wait_for_done_ctx(ctx,
+				S5P_FIMV_R2H_CMD_FRAME_DONE_RET))
+			s5p_mfc_cleanup_timeout(ctx);
+		aborted = 1;
+	}
+
+	if (need_to_wait_nal_abort(ctx)) {
+		ctx->state = MFCINST_ABORT;
+		if (s5p_mfc_wait_for_done_ctx(ctx,
+				S5P_FIMV_R2H_CMD_NAL_ABORT_RET))
+			s5p_mfc_cleanup_timeout(ctx);
+		aborted = 1;
+	}
+#endif
 
 	if (enc->in_slice || enc->buf_full) {
 		ctx->state = MFCINST_ABORT_INST;
@@ -4148,9 +4184,13 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 	}
 
 	spin_unlock_irqrestore(&dev->irqlock, flags);
-
+#ifndef CONFIG_MFC_TRELTE
 	if (aborted || ctx->state == MFCINST_FINISHING)
+#else
+	if (aborted)
+#endif
 		ctx->state = MFCINST_RUNNING;
+#ifndef CONFIG_MFC_TRELTE
 
 	spin_lock_irq(&dev->condlock);
 	clear_bit(ctx->num, &dev->ctx_stop_bits);
@@ -4167,6 +4207,7 @@ static int s5p_mfc_stop_streaming(struct vb2_queue *q)
 	if (dev->ctx_work_bits)
 		queue_work(dev->sched_wq, &dev->sched_work);
 	spin_unlock_irq(&dev->condlock);
+#endif
 
 	return 0;
 }

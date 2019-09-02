@@ -459,6 +459,10 @@ config BOARD_TRE3CALTELGT
 	bool "Samsung Galaxy N4 S-LTE SKT (N910C)
 	default n
 
+config MFC_TRELTE
+	bool "Samsung Galaxy N4 MFC Support"
+	default n
+
 if EXYNOS_ATAGS
 
 config EXYNOS_DEV_DMA
