@@ -48,7 +48,8 @@ int verify_iovec(struct msghdr *m, struct iovec *iov, struct sockaddr_storage *a
 			if (err < 0)
 				return err;
 		}
-		m->msg_name = address;
+		if (m->msg_name)
+			m->msg_name = address;
 	} else {
 		m->msg_name = NULL;
 	}
@@ -141,6 +142,10 @@ int csum_partial_copy_fromiovecend(unsigned char *kdata, struct iovec *iov,
 {
 	__wsum csum = *csump;
 	int partial_cnt = 0, err = 0;
+
+	/* No data? Done! */
+	if (len == 0)
+		return 0;
 
 	/* Skip over the finished iovecs */
 	while (offset >= iov->iov_len) {

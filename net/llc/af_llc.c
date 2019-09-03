@@ -626,6 +626,7 @@ static void llc_cmsg_rcv(struct msghdr *msg, struct sk_buff *skb)
 	if (llc->cmsg_flags & LLC_CMSG_PKTINFO) {
 		struct llc_pktinfo info;
 
+		memset(&info, 0, sizeof(info));
 		info.lpi_ifindex = llc_sk(skb->sk)->dev->ifindex;
 		llc_pdu_decode_dsap(skb, &info.lpi_sap);
 		llc_pdu_decode_da(skb, info.lpi_mac);
@@ -719,8 +720,6 @@ static int llc_ui_recvmsg(struct kiocb *iocb, struct socket *sock,
 	unsigned long used;
 	int target;	/* Read at least this many bytes */
 	long timeo;
-
-	msg->msg_namelen = 0;
 
 	lock_sock(sk);
 	copied = -ENOTCONN;

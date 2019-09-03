@@ -57,6 +57,16 @@ static bool has_ossr;
 /* Maximum supported watchpoint length. */
 static u8 max_watchpoint_len;
 
+#ifdef CONFIG_SKIP_HW_BREAKPOINT
+static int skip_hw_breakpoint;
+static int __init skip_hw_breakpoint_func(char *str)
+{
+        get_option(&str, &skip_hw_breakpoint);
+        return 0;
+}
+early_param("hw_breakpoint", skip_hw_breakpoint_func);
+#endif
+
 #define READ_WB_REG_CASE(OP2, M, VAL)			\
 	case ((OP2 << 4) + M):				\
 		ARM_DBG_READ(c0, c ## M, OP2, VAL);	\
@@ -945,6 +955,14 @@ static void reset_ctrl_regs(void *unused)
 		goto out_mdbgen;
 	case ARM_DEBUG_ARCH_V7_ECP14:
 		/*
+		 * Unconditionally clear the OS lock by writing a value
+		 * other than CS_LAR_KEY to the access register.
+		*/
+
+		ARM_DBG_WRITE(c1, c0, 4, CS_LAR_KEY);
+		isb();
+		
+		/*
 		 * Ensure sticky power-down is clear (i.e. debug logic is
 		 * powered up).
 		 */
@@ -956,6 +974,14 @@ static void reset_ctrl_regs(void *unused)
 			goto clear_vcr;
 		break;
 	case ARM_DEBUG_ARCH_V7_1:
+		/*
+		 * Unconditionally clear the OS lock by writing a value
+		 * other than CS_LAR_KEY to the access register.
+		*/
+
+		ARM_DBG_WRITE(c1, c0, 4, CS_LAR_KEY);
+		isb();
+		
 		/*
 		 * Ensure the OS double lock is clear.
 		 */
@@ -970,13 +996,6 @@ static void reset_ctrl_regs(void *unused)
 		cpumask_or(&debug_err_mask, &debug_err_mask, cpumask_of(cpu));
 		return;
 	}
-
-	/*
-	 * Unconditionally clear the OS lock by writing a value
-	 * other than CS_LAR_KEY to the access register.
-	 */
-	ARM_DBG_WRITE(c1, c0, 4, ~CS_LAR_KEY);
-	isb();
 
 	/*
 	 * Clear any configured vector-catch events before
@@ -1065,6 +1084,13 @@ static int __init arch_hw_breakpoint_init(void)
 		pr_info("debug architecture 0x%x unsupported.\n", debug_arch);
 		return 0;
 	}
+
+#if defined(CONFIG_SKIP_HW_BREAKPOINT)
+	if (skip_hw_breakpoint) {
+		pr_info("skip arch_hw_breakpoint init\n");
+		return 0;
+	}
+#endif
 
 	has_ossr = core_has_os_save_restore();
 

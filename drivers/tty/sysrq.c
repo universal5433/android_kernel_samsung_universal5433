@@ -205,7 +205,7 @@ static struct sysrq_key_op sysrq_showlocks_op = {
 #define sysrq_showlocks_op (*(struct sysrq_key_op *)NULL)
 #endif
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && !defined(CONFIG_SKIP_BACKTRACE_ALLCPUS_SYSRQ)
 static DEFINE_SPINLOCK(show_lock);
 
 static void showacpu(void *dummy)
@@ -440,7 +440,7 @@ static struct sysrq_key_op *sysrq_key_table[36] = {
 	NULL,				/* j */
 #endif
 	&sysrq_SAK_op,			/* k */
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && !defined(CONFIG_SKIP_BACKTRACE_ALLCPUS_SYSRQ)
 	&sysrq_showallcpus_op,		/* l */
 #else
 	NULL,				/* l */
