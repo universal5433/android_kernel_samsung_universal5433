@@ -28,6 +28,10 @@
 #include <linux/irq.h>
 #include <linux/of_device.h>
 
+#ifdef CONFIG_POWERSUSPEND
+#include <linux/powersuspend.h>
+#endif
+
 #include <video/mipi_display.h>
 #include "../decon_display/decon_mipi_dsi.h"
 
@@ -1785,6 +1789,10 @@ static int s6e3ha2_displayon(struct mipi_dsim_device *dsim)
 
 	s6e3ha2_power(lcd, FB_BLANK_UNBLANK);
 
+#ifdef CONFIG_POWERSUSPEND
+	set_power_suspend_state_panel_hook(POWER_SUSPEND_INACTIVE); // Yank555.lu : add hook to handle powersuspend tasks (wakeup)
+#endif
+
 	return 0;
 }
 
@@ -1793,6 +1801,10 @@ static int s6e3ha2_suspend(struct mipi_dsim_device *dsim)
 	struct lcd_info *lcd = dev_get_drvdata(&dsim->lcd->dev);
 
 	s6e3ha2_power(lcd, FB_BLANK_POWERDOWN);
+
+#ifdef CONFIG_POWERSUSPEND
+	set_power_suspend_state_panel_hook(POWER_SUSPEND_ACTIVE); // Yank555.lu : add hook to handle powersuspend tasks (sleep)
+#endif
 
 	return 0;
 }
