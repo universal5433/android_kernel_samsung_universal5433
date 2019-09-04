@@ -2296,7 +2296,7 @@ static ssize_t show_kernel_sysfs_gpu_temp(struct kobject *kobj, struct kobj_attr
 
         if (i == EXYNOS_GPU_NUMBER) {
             if ((soc_is_exynos5430() || soc_is_exynos5433()) && !gpu_is_power_on())
-                temp = COLD_TEMP + 1;
+//                temp = COLD_TEMP + 1;
             gpu_temp = temp;
         } else {
             if (temp > max)
