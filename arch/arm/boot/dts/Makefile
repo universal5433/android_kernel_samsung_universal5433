@@ -33,7 +33,7 @@ dtb-$(CONFIG_BOARD_TRELTESKT) += exynos5433-trelte_kor_open_06.dtb\
  exynos5433-trelte_kor_open_11.dtb \
  exynos5433-trelte_kor_open_12.dtb
 
- dtb-$(CONFIG_BOARD_TRHPLTE) += exynos5433-trlte_eur_open_00.dtb \
+ dtb-$(CONFIG_BOARD_TRHPLTEXX) += exynos5433-trlte_eur_open_00.dtb \
 exynos5433-trlte_eur_open_09.dtb \
 exynos5433-trlte_eur_open_10.dtb \
 exynos5433-trlte_eur_open_11.dtb \
@@ -45,7 +45,7 @@ exynos5433-tbelte_kor_open_11.dtb \
 exynos5433-tbelte_kor_open_12.dtb \
 exynos5433-tbelte_kor_open_14.dtb
 
-dtb-$(CONFIG_BOARD_TRE3CALTELGT) += exynos5433-tre3calte_kor_open_05.dtb \
+dtb-$(CONFIG_BOARD_TRE3CALTESKT) += exynos5433-tre3calte_kor_open_05.dtb \
 exynos5433-tre3calte_kor_open_14.dtb
 
 DTB_NAMES := $(subst $\",,$(CONFIG_BUILD_ARM_APPENDED_DTB_IMAGE_NAMES))

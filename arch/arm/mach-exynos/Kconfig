@@ -448,10 +448,10 @@ config BOARD_GTS210LTEXX
 	default n
 
 config BOARD_TRELTEXX
-	bool "Samsung Galaxy N4 LTE
+	bool "Samsung Galaxy N4 LTE (N910C/H)
 	default n
 
-config BOARD_TRHPLTE
+config BOARD_TRHPLTEXX
 	bool "Samsung Galaxy N4 LTE (N910U)
 	default n
 
@@ -460,11 +460,11 @@ config BOARD_TRELTESKT
 	default n
 
 config BOARD_TBELTESKT
-	bool "Samsung Galaxy N4 EDGE LTE SKT (N910S/L/K)
+	bool "Samsung Galaxy N4 EDGE LTE SKT (N915S/L/K)
 	default n
 
-config BOARD_TRE3CALTELGT
-	bool "Samsung Galaxy N4 S-LTE SKT (N910C)
+config BOARD_TRE3CALTESKT
+	bool "Samsung Galaxy N4 S-LTE SKT (N916S/L/K)
 	default n
 
 config MFC_TRELTE
