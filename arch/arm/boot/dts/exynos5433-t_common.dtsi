@@ -1732,9 +1732,9 @@
 
 			/* Frequency table */
 			/* for level	:		1_Head, 2_Tail, 3_Head, 4_Head/Tail, 5_Head, 9_Head, 9_Tail */
-			input_booster,cpu_freqs = <1200000 0 0 0 1000000 1900000 1500000>;
+			input_booster,cpu_freqs = <1000000 0 0 0 1000000 1500000 1300000>;
 			input_booster,hmp_boost = <1 0 0 0 1 1 1>;
-			input_booster,kfc_freqs = <1000000 1300000 1300000 1300000 800000 1300000 1300000>;
+			input_booster,kfc_freqs = <1000000 1100000 1100000 1100000 800000 1100000 1100000>;
 			input_booster,mif_freqs = <667000 413000 413000 667000 667000 825000 825000>;
 			input_booster,int_freqs = <334000 133000 133000 133000 334000 400000 400000>;
 
@@ -1751,9 +1751,9 @@
 
 			/* Frequency table */
 			/* for level	:		1_Head, 2_Tail, 3_Head, 4_Head/Tail, 5_Head, 9_Head, 9_Tail */
-			input_booster,cpu_freqs = <1200000 0 0 0 1000000 1900000 1500000>;
+			input_booster,cpu_freqs = <900000 0 0 0 1000000 1700000 1300000>;
 			input_booster,hmp_boost = <1 0 0 0 1 1 1>;
-			input_booster,kfc_freqs = <1000000 1300000 1300000 1300000 800000 1300000 1300000>;
+			input_booster,kfc_freqs = <900000 1100000 1100000 1100000 800000 1100000 1100000>;
 			input_booster,mif_freqs = <667000 413000 413000 667000 667000 825000 825000>;
 			input_booster,int_freqs = <334000 133000 133000 133000 334000 400000 400000>;
 
@@ -1770,7 +1770,7 @@
 
 			/* Frequency table */
 			/* for level	:	1_Head */
-			input_booster,cpu_freqs = <1200000>;
+			input_booster,cpu_freqs = <900000>;
 			input_booster,hmp_boost = <1>;
 			input_booster,kfc_freqs = <0>;
 			input_booster,mif_freqs = <0>;
