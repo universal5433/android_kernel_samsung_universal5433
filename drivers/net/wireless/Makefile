@@ -11,7 +11,7 @@ obj-$(CONFIG_AIRO)		+= airo.o
 obj-$(CONFIG_AIRO_CS)		+= airo_cs.o airo.o
 
 obj-$(CONFIG_ATMEL)             += atmel.o
-obj-$(CONFIG_PCI_ATMEL)         += atmel_pci.o 
+obj-$(CONFIG_PCI_ATMEL)         += atmel_pci.o
 obj-$(CONFIG_PCMCIA_ATMEL)      += atmel_cs.o
 
 obj-$(CONFIG_AT76C50X_USB)      += at76c50x-usb.o
@@ -62,9 +62,9 @@ obj-$(CONFIG_BCM4358_A3)	+= bcmdhd4358a3/
 obj-$(CONFIG_MACH_UNIVERSAL5433) += bcmdhd4358a3/dhd_custom_memprealloc.o
 obj-$(CONFIG_MACH_UNIVERSAL5433) += bcmdhd4358a3/dhd_custom_exynos.o
 else ifneq ($(CONFIG_BCM4358),)
-obj-$(CONFIG_BCM4358)	+= bcmdhd4358/
-obj-$(CONFIG_MACH_UNIVERSAL5433) += bcmdhd4358/dhd_custom_memprealloc.o
-obj-$(CONFIG_MACH_UNIVERSAL5433) += bcmdhd4358/dhd_custom_exynos.o
+obj-$(CONFIG_BCM4358)	+= bcmdhd4358a3/
+obj-$(CONFIG_MACH_UNIVERSAL5433) += bcmdhd4358a3/dhd_custom_memprealloc.o
+obj-$(CONFIG_MACH_UNIVERSAL5433) += bcmdhd4358a3/dhd_custom_exynos.o
 endif
 
 obj-$(CONFIG_BCM4354)	+= bcmdhd/
