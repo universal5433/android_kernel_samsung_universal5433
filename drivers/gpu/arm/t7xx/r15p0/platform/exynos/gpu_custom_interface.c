@@ -39,7 +39,7 @@
 #include <mach/asv-exynos.h>
 
 #ifdef CONFIG_SOC_EXYNOS5433
-#define GPU_MAX_VOLT		1150000
+#define GPU_MAX_VOLT		1175000
 #define GPU_MIN_VOLT		600000
 #define GPU_VOLT_STEP		6250
 #else
