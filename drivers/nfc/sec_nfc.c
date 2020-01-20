@@ -72,11 +72,6 @@ struct sec_nfc_i2c_info {};
 #include <linux/sched.h>
 #include <linux/i2c.h>
 
-#include <linux/moduleparam.h>
-
-static int wl_nfc = 2;
-module_param(wl_nfc, int, 0644);
-
 #define SEC_NFC_GET_INFO(dev) i2c_get_clientdata(to_i2c_client(dev))
 enum sec_nfc_irq {
 	SEC_NFC_NONE,
@@ -141,7 +136,7 @@ static irqreturn_t sec_nfc_irq_thread_fn(int irq, void *dev_id)
 	if(!wake_lock_active(&info->nfc_wake_lock))
 	{
 		dev_dbg(info->dev, "%s: Set wake_lock_timeout for 2 sec. !!!\n", __func__);
-		wake_lock_timeout(&info->nfc_wake_lock, wl_nfc*HZ);
+		wake_lock_timeout(&info->nfc_wake_lock, 2*HZ);
 	}
 
 	return IRQ_HANDLED;
