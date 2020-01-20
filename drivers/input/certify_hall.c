@@ -23,11 +23,6 @@
 #include <linux/wakelock.h>
 #include <linux/hall.h>
 
-#include <linux/moduleparam.h>
-
-static int wl_hall = 5;
-module_param(wl_hall, int, 0644);
-
 struct device *sec_device_create(void *drvdata, const char *fmt);
 
 struct certify_hall_drvdata {
@@ -125,7 +120,7 @@ static void __certify_cover_detect(struct certify_hall_drvdata *ddata, bool flip
 	schedule_delayed_work(&ddata->certify_cover_dwork, HZ / 20);
 #else
 	if(flip_certify_status)	{
-		wake_lock_timeout(&ddata->certify_wake_lock, HZ * wl_hall / 100); /* 50ms */
+		wake_lock_timeout(&ddata->certify_wake_lock, HZ * 5 / 100); /* 50ms */
 		schedule_delayed_work(&ddata->certify_cover_dwork, HZ * 1 / 100); /* 10ms */
 	} else {
 		wake_unlock(&ddata->certify_wake_lock);
