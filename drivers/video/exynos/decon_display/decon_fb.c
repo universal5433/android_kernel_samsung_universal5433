@@ -70,6 +70,10 @@
 #include <linux/trustedui.h>
 #endif
 
+#ifdef CONFIG_DEVFREQ_BOOST
+#include <linux/devfreq_boost.h>
+#endif
+
 #if defined(CONFIG_ARM_EXYNOS5430_BUS_DEVFREQ) || defined(CONFIG_ARM_EXYNOS5433_BUS_DEVFREQ)
 #define CONFIG_DECON_DEVFREQ
 #include <mach/devfreq.h>
@@ -2208,6 +2212,10 @@ static void s3c_set_win_update_config(struct s3c_fb *sfb,
 	r1.right = r1.left + update_config->w - 1;
 	r1.bottom = r1.top + update_config->h - 1;
 
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
+
 	for (i = 0; i < sfb->variant.nr_windows; i++) {
 		struct s3c_fb_win_config *config = &win_config[i];
 		if (config->state == S3C_FB_WIN_STATE_DISABLED)
@@ -2317,6 +2325,9 @@ static int s3c_fb_set_win_config(struct s3c_fb *sfb,
 #ifdef CONFIG_LCD_ALPM
 	if(dsim_for_decon->lcd_alpm) {
 		all_win_disabled = true;
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 		for (i = 0; i < sfb->variant.nr_windows; i++) {
 			if( win_config[i].state != S3C_FB_WIN_STATE_DISABLED )
 			{
@@ -2361,6 +2372,10 @@ static int s3c_fb_set_win_config(struct s3c_fb *sfb,
 		ret = -ENOMEM;
 		goto err;
 	}
+
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 
 	for (i = 0; i < sfb->variant.nr_windows; i++) {
 		regs->otf_state[i] = win_config[i].state;
@@ -2481,6 +2496,9 @@ static int s3c_fb_set_win_config(struct s3c_fb *sfb,
 #endif
 
 	if (ret) {
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 		for (i = 0; i < sfb->variant.nr_windows; i++) {
 			if (WIN_CONFIG_DMA(i)) {
 				sfb->windows[i]->fbinfo->fix =
@@ -2881,6 +2899,10 @@ static void __s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 	if (sfb->trig_mode == DECON_HW_TRIG)
 		decon_reg_set_trigger(sfb->trig_mode, DECON_TRIG_DISABLE);
 
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
+
 	for (i = 0; i < sfb->variant.nr_windows; i++)
 		decon_reg_shadow_protect_win(sfb->windows[i]->index, 1);
 
@@ -2889,6 +2911,10 @@ static void __s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 #endif
 	for (i = 0; i < S3C_FB_MAX_WIN; i++)
 		errwin[i] = 0;
+
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 
 	for (i = 0; i < sfb->variant.nr_windows; i++) {
 		if (WIN_CONFIG_DMA(i)) {
@@ -2936,6 +2962,9 @@ static void __s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 			}
 		}
 	}
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 	for (i = 0; i < sfb->variant.nr_windows; i++)
 		decon_reg_shadow_protect_win(sfb->windows[i]->index, 0);
 
@@ -2968,6 +2997,10 @@ static void __s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 
 	s3c_fb_to_psr_info(sfb, &psr);
 	s3c_fb_vidout_start(&psr);
+
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 
 	for (i = 0; i < sfb->variant.nr_windows; i++) {
 		if (WIN_CONFIG_DMA(i) &&
@@ -3027,6 +3060,10 @@ static void s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 #endif
 	disp_pm_runtime_get_sync(dispdrv);
 
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
+
 	for (i = 0; i < sfb->variant.nr_windows; i++) {
 		old_dma_bufs[i] = sfb->windows[i]->dma_buf_data;
 		if (WIN_CONFIG_DMA(i)) {
@@ -3057,6 +3094,10 @@ static void s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 		s3c_fb_wait_for_vsync(sfb, VSYNC_TIMEOUT_MSEC);
 		wait_for_vsync = false;
 
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
+
 		for (i = 0; i < sfb->variant.nr_windows; i++) {
 			if (WIN_CONFIG_DMA(i)) {
 				u32 new_start = regs->vidw_buf_start[i];
@@ -3071,6 +3112,9 @@ static void s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 	} while (wait_for_vsync && count--);
 	if (wait_for_vsync) {
 		pr_err("%s: failed to update registers\n", __func__);
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 		for (i = 0; i < sfb->variant.nr_windows; i++)
 			if (WIN_CONFIG_DMA(i))
 				pr_err("window %d new value %08x register value %08x\n",
@@ -3088,6 +3132,9 @@ static void s3c_fb_update_regs(struct s3c_fb *sfb, struct s3c_reg_data *regs)
 		decon_reg_set_trigger(sfb->trig_mode, DECON_TRIG_DISABLE);
 
 	sfb->trig_mask_timestamp = ktime_get();
+#ifdef CONFIG_DEVFREQ_BOOST
+	devfreq_boost_kick(DEVFREQ_EXYNOS_MIF);
+#endif
 	for (i = 0; i < sfb->variant.nr_windows; i++)
 		s3c_fb_free_dma_buf(sfb, &old_dma_bufs[i]);
 
