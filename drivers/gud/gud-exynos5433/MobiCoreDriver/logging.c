@@ -211,6 +211,7 @@ static void log_exit(void)
 static int log_worker(void *p)
 {
 	int ret = 0;
+    goto err_kthread;
 	if (log_buf == NULL) {
 		ret = -EFAULT;
 		goto err_kthread;
@@ -236,7 +237,7 @@ static int log_worker(void *p)
 		}
 	}
 err_kthread:
-	MCDRV_DBG(mcd, "Logging thread stopped!");
+	MCDRV_DBG(mcd, "Logging thread disabled!");
 	thread_err = ret;
 	/* Wait until the next kthread_stop() is called, if it was already
 	 * called we just slip through, if there is an error signal it and
