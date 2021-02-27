@@ -133,6 +133,7 @@ source security/apparmor/Kconfig
 source security/yama/Kconfig
 
 source security/integrity/Kconfig
+source security/tima_uevent/Kconfig
 source security/tz_iccc/Kconfig
 
 choice
@@ -178,4 +179,3 @@ config DEFAULT_SECURITY
 	default "" if DEFAULT_SECURITY_DAC
 
 endmenu
-
