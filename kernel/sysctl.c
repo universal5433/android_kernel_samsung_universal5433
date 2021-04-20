@@ -1178,11 +1178,7 @@ static struct ctl_table vm_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_dointvec_minmax,
 		.extra1		= &zero,
-#ifdef CONFIG_INCREASE_MAXIMUM_SWAPPINESS
 		.extra2		= &max_swappiness,
-#else
-		.extra2		= &one_hundred,
-#endif
 	},
 #ifdef CONFIG_HUGETLB_PAGE
 	{
