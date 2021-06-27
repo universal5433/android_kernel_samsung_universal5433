@@ -26,7 +26,7 @@
 
 /* MALI_SEC_SECURE_RENDERING */
 #ifdef CONFIG_MALI_EXYNOS_SECURE_RENDERING
-#include <linux/smc.h>
+#include <mach/smc.h>
 #include <asm/cacheflush.h>
 #ifdef CONFIG_MALI_SEC_ASP_SECURE_BUF_CTRL
 #include <linux/exynos_ion.h>
