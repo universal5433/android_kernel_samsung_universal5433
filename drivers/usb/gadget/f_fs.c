@@ -716,7 +716,7 @@ static int ffs_ep0_open(struct inode *inode, struct file *file)
 	if (unlikely(ffs->state == FFS_CLOSING))
 		return -EBUSY;
 
-	smp_mb__before_atomic();
+	smp_mb__before_atomic_dec();
 	if (atomic_read(&ffs->opened))
 		return -EBUSY;
 
@@ -1124,25 +1124,12 @@ static int ffs_sb_fill(struct super_block *sb, void *_data, int silent)
 {
 	struct ffs_sb_fill_data *data = _data;
 	struct inode	*inode;
-	struct ffs_data	*ffs;
+	struct ffs_data	*ffs = data->ffs_data;
 
 	ENTER();
 
-	/* Initialise data */
-	ffs = ffs_data_new();
-	if (unlikely(!ffs))
-		goto Enomem;
-
 	ffs->sb              = sb;
-	ffs->dev_name        = kstrdup(data->dev_name, GFP_KERNEL);
-	if (unlikely(!ffs->dev_name))
-		goto Enomem;
-	ffs->file_perms      = data->perms;
-	ffs->private_data    = data->private_data;
-
-	/* used by the caller of this function */
-	data->ffs_data       = ffs;
-
+	data->ffs_data       = NULL;
 	sb->s_fs_info        = ffs;
 	sb->s_blocksize      = PAGE_CACHE_SIZE;
 	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
@@ -1158,17 +1145,14 @@ static int ffs_sb_fill(struct super_block *sb, void *_data, int silent)
 				  &data->perms);
 	sb->s_root = d_make_root(inode);
 	if (unlikely(!sb->s_root))
-		goto Enomem;
+		return -ENOMEM;
 
 	/* EP0 file */
 	if (unlikely(!ffs_sb_create_file(sb, "ep0", ffs,
 					 &ffs_ep0_operations, NULL)))
-		goto Enomem;
+		return -ENOMEM;
 
 	return 0;
-
-Enomem:
-	return -ENOMEM;
 }
 
 static int ffs_fs_parse_opts(struct ffs_sb_fill_data *data, char *opts)
@@ -1278,6 +1262,7 @@ ffs_fs_mount(struct file_system_type *t, int flags,
 	struct dentry *rv;
 	int ret;
 	void *ffs_dev;
+	struct ffs_data	*ffs;
 
 	ENTER();
 
@@ -1285,8 +1270,6 @@ ffs_fs_mount(struct file_system_type *t, int flags,
 	if (unlikely(ret < 0))
 		return ERR_PTR(ret);
 
-<<<<<<< HEAD
-=======
 	ffs = ffs_data_new();
 	if (unlikely(!ffs))
 		return ERR_PTR(-ENOMEM);
@@ -1299,19 +1282,19 @@ ffs_fs_mount(struct file_system_type *t, int flags,
 		return ERR_PTR(-ENOMEM);
 	}
 
->>>>>>> e6215ba17db... UPSTREAM: usb: gadget: f_fs: add "no_disconnect" mode
 	ffs_dev = functionfs_acquire_dev_callback(dev_name);
-	if (IS_ERR(ffs_dev))
-		return ffs_dev;
+	if (IS_ERR(ffs_dev)) {
+		ffs_data_put(ffs);
+		return ERR_CAST(ffs_dev);
+	}
+	ffs->private_data = ffs_dev;
+	data.ffs_data = ffs;
 
-	data.dev_name = dev_name;
-	data.private_data = ffs_dev;
 	rv = mount_nodev(t, flags, &data, ffs_sb_fill);
-
-	/* data.ffs_data is set by ffs_sb_fill */
-	if (IS_ERR(rv))
+	if (IS_ERR(rv) && data.ffs_data) {
 		functionfs_release_dev_callback(data.ffs_data);
-
+		ffs_data_put(data.ffs_data);
+	}
 	return rv;
 }
 
@@ -1372,7 +1355,7 @@ static void ffs_data_get(struct ffs_data *ffs)
 {
 	ENTER();
 
-	smp_mb__before_atomic();
+	smp_mb__before_atomic_dec();
 	atomic_inc(&ffs->ref);
 }
 
@@ -1380,7 +1363,7 @@ static void ffs_data_opened(struct ffs_data *ffs)
 {
 	ENTER();
 
-	smp_mb__before_atomic();
+	smp_mb__before_atomic_dec();
 	atomic_inc(&ffs->ref);
 	if (atomic_add_return(1, &ffs->opened) == 1 &&
 			ffs->state == FFS_DEACTIVATED) {
@@ -1393,7 +1376,7 @@ static void ffs_data_put(struct ffs_data *ffs)
 {
 	ENTER();
 
-	smp_mb__before_atomic();
+	smp_mb__before_atomic_dec();
 	if (unlikely(atomic_dec_and_test(&ffs->ref))) {
 		pr_info("%s(): freeing\n", __func__);
 		ffs_data_clear(ffs);
@@ -1408,7 +1391,7 @@ static void ffs_data_closed(struct ffs_data *ffs)
 {
 	ENTER();
 
-	smp_mb__before_atomic();
+	smp_mb__before_atomic_dec();
 	if (atomic_dec_and_test(&ffs->opened)) {
 		if (ffs->no_disconnect) {
 			ffs->state = FFS_DEACTIVATED;
@@ -1530,11 +1513,13 @@ static int functionfs_bind(struct ffs_data *ffs, struct usb_composite_dev *cdev)
 	ffs->ep0req->context = ffs;
 
 	lang = ffs->stringtabs;
-	for (lang = ffs->stringtabs; *lang; ++lang) {
-		struct usb_string *str = (*lang)->strings;
-		int id = first_id;
-		for (; str->s; ++id, ++str)
-			str->id = id;
+	if (lang) {
+		for (; *lang; ++lang) {
+			struct usb_string *str = (*lang)->strings;
+			int id = first_id;
+			for (; str->s; ++id, ++str)
+				str->id = id;
+		}
 	}
 
 	ffs->gadget = cdev->gadget;
