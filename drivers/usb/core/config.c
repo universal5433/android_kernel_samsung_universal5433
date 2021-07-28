@@ -515,8 +515,8 @@ static int usb_parse_configuration(struct usb_device *dev, int cfgidx,
 			d = (struct usb_interface_assoc_descriptor *)header;
 			if (d->bLength < USB_DT_INTERFACE_ASSOCIATION_SIZE) {
 				dev_warn(ddev,
-					"config %d has an invalid interface association descriptor of length %d, skipping\n",
-					cfgno, d->bLength);
+					 "config %d has an invalid interface association descriptor of length %d, skipping\n",
+					 cfgno, d->bLength);
 				continue;
 			}
 
@@ -833,6 +833,7 @@ int usb_get_bos_descriptor(struct usb_device *dev)
 	for (i = 0; i < num; i++) {
 		buffer += length;
 		cap = (struct usb_dev_cap_header *)buffer;
+
 		if (total_len < sizeof(*cap) || total_len < cap->bLength) {
 			dev->bos->desc->bNumDeviceCaps = i;
 			break;
