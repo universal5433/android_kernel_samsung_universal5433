@@ -16,7 +16,9 @@
  */
 
 #include <mali_kbase.h>
+#ifndef MALI_SEC_LEGACY_SUPPORT
 #include <mach/apm-exynos.h>
+#endif /* !MALI_SEC_LEGACY_SUPPORT */
 #include <mach/asv-exynos.h>
 
 #include "mali_kbase_platform.h"
@@ -24,6 +26,7 @@
 #include "gpu_dvfs_handler.h"
 #include "gpu_dvfs_governor.h"
 
+#ifndef MALI_SEC_LEGACY_SUPPORT
 #define GPU_SET_CLK_VOL(kbdev, prev_clk, clk, vol)			\
 ({			\
 	if (prev_clk < clk) {			\
@@ -36,6 +39,19 @@
 		gpu_control_set_voltage(kbdev, vol);			\
 	}			\
 })
+#else
+#define GPU_SET_CLK_VOL(kbdev, prev_clk, clk, vol)			\
+({			\
+	if (prev_clk < clk) {			\
+		gpu_control_set_voltage(kbdev, vol);			\
+		gpu_control_set_clock(kbdev, clk);			\
+	} else {			\
+		gpu_control_set_clock(kbdev, clk);			\
+		gpu_control_set_voltage(kbdev, vol);			\
+	}			\
+})
+#endif /* !MALI_SEC_LEGACY_SUPPORT */
+
 
 extern struct kbase_device *pkbdev;
 

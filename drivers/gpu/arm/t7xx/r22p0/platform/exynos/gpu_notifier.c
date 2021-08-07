@@ -18,7 +18,11 @@
 
 #include <linux/suspend.h>
 #include <linux/pm_runtime.h>
+#ifndef MALI_SEC_LEGACY_SUPPORT
 #include <mach/apm-exynos.h>
+#else
+#include <mach/asv-exynos5_cal.h>
+#endif /* !MALI_SEC_LEGACY_SUPPORT */
 #include <mach/asv-exynos.h>
 
 #include "mali_kbase_platform.h"
@@ -263,9 +267,15 @@ static int pm_callback_change_dvfs_level(struct kbase_device *kbdev)
 		enabledebug = kbdev->vendor_callbacks->get_poweron_dbg();
 #if 0
 	if (enabledebug)
+#ifndef MALI_SEC_LEGACY_SUPPORT
 		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "asv table[%u] clk[%d to %d]MHz, vol[%d (margin : %d) real: %d]mV\n",
 				exynos_get_table_ver(), gpu_get_cur_clock(platform), platform->gpu_dvfs_start_clock,
 				gpu_get_cur_voltage(platform), platform->voltage_margin, platform->cur_voltage);
+#else
+		GPU_LOG(DVFS_ERROR, DUMMY, 0u, 0u, "asv table[%u] clk[%d to %d]MHz, vol[%d (margin : %d) real: %d]mV\n",
+				cal_get_table_ver(), gpu_get_cur_clock(platform), platform->gpu_dvfs_start_clock,
+				gpu_get_cur_voltage(platform), platform->voltage_margin, platform->cur_voltage);
+#endif /* !MALI_SEC_LEGACY_SUPPORT */
 #endif
 	gpu_set_target_clk_vol(platform->gpu_dvfs_start_clock, false);
 	gpu_dvfs_reset_env_data(kbdev);

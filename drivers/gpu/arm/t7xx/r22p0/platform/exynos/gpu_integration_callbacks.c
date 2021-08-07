@@ -63,8 +63,13 @@ extern int set_hmp_boost(int enable);
 #endif
 
 #ifdef CONFIG_USE_VSYNC_SKIP
+#ifdef MALI_SEC_LEGACY_SUPPORT
+void s3c_fb_extra_vsync_wait_set(int);
+void s3c_fb_extra_vsync_wait_add(int);
+#else
 void decon_extra_vsync_wait_set(int);
 void decon_extra_vsync_wait_add(int);
+#endif /* MALI_SEC_LEGACY_SUPPORT */
 #endif
 
 #ifdef MALI_SEC_SEPERATED_UTILIZATION
@@ -214,10 +219,18 @@ int gpu_vendor_dispatch(struct kbase_context *kctx, u32 flags)
 					t_index = i;
 
 			if (t_index < tskip->num_ratiometer) {
+#ifdef MALI_SEC_LEGACY_SUPPORT
+				s3c_fb_extra_vsync_wait_add(tskip->skip_count[t_index]);
+#else
 				decon_extra_vsync_wait_add(tskip->skip_count[t_index]);
+#endif /* MALI_SEC_LEGACY_SUPPORT */
 				ukh->ret = MALI_ERROR_NONE;
 			} else {
+#ifdef MALI_SEC_LEGACY_SUPPORT
+				s3c_fb_extra_vsync_wait_set(0);
+#else
 				decon_extra_vsync_wait_set(0);
+#endif /* MALI_SEC_LEGACY_SUPPORT */
 				ukh->ret = MALI_ERROR_FUNCTION_FAILED;
 			}
 
@@ -360,9 +373,17 @@ int gpu_vendor_dispatch(struct kbase_context *kctx, u32 flags)
 			KBASE_TRACE_ADD_EXYNOS(kbdev, LSI_HWCNT_VSYNC_SKIP, NULL, NULL, 0u, vskip->skip_count);
 
 			if (vskip->skip_count == 0) {
+#ifdef MALI_SEC_LEGACY_SUPPORT
+				s3c_fb_extra_vsync_wait_set(0);
+#else
 				decon_extra_vsync_wait_set(0);
+#endif
 			} else {
+#ifdef MALI_SEC_LEGACY_SUPPORT
+				s3c_fb_extra_vsync_wait_add(vskip->skip_count);
+#else
 				decon_extra_vsync_wait_add(vskip->skip_count);
+#endif
 			}
 #endif /* CONFIG_USE_VSYNC_SKIP */
 			break;
@@ -587,6 +608,7 @@ void kbase_mem_free_list_cleanup(struct kbase_context *kctx)
 
 #define KBASE_MMU_PAGE_ENTRIES	512
 
+#ifndef MALI_SEC_LEGACY_SUPPORT
 static phys_addr_t mmu_pte_to_phy_addr(u64 entry)
 {
 	if (!(entry & 1))
@@ -652,6 +674,7 @@ void gpu_debug_pagetable_info(void *ctx, u64 vaddr)
 	dev_err(kctx->kbdev->dev, "Looking up virtual GPU address: 0x%016llX\n", vaddr);
 	gpu_page_table_info_dp_level(kctx, vaddr, kctx->pgd, 0);
 }
+#endif /* !MALI_SEC_LEGACY_SUPPORT */
 
 #ifdef CONFIG_MALI_SEC_CL_BOOST
 void gpu_cl_boost_init(void *dev)
@@ -1140,7 +1163,9 @@ struct kbase_vendor_callbacks exynos_callbacks = {
 #endif
 	.set_poweron_dbg = gpu_set_poweron_dbg,
 	.get_poweron_dbg = gpu_get_poweron_dbg,
+#ifndef MALI_SEC_LEGACY_SUPPORT
 	.debug_pagetable_info = gpu_debug_pagetable_info,
+#endif /* !MALI_SEC_LEGACY_SUPPORT */
 	.mem_profile_check_kctx = gpu_mem_profile_check_kctx,
 #ifdef MALI_SEC_SEPERATED_UTILIZATION
 	.pm_record_state = gpu_pm_record_state,
