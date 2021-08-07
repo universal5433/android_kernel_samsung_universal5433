@@ -20,7 +20,9 @@
 #include <linux/fb.h>
 
 #if defined(CONFIG_EXYNOS_THERMAL) && defined(CONFIG_MALI_DEBUG_KERNEL_SYSFS)
-#include "cal_tmu7420.h"
+#include <mach/tmu.h>
+#include <plat/cpu.h>
+#include "cal_tmu.h"
 #endif
 
 #include "mali_kbase_platform.h"
@@ -31,7 +33,7 @@
 #include "gpu_ipa.h"
 #endif /* CONFIG_CPU_THERMAL_IPA */
 #include "gpu_custom_interface.h"
-#include <mach/apm-exynos.h>
+//#include <mach/apm-exynos.h>
 #include <mach/asv-exynos.h>
 
 extern struct kbase_device *pkbdev;
