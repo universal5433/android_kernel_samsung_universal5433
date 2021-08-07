@@ -950,15 +950,15 @@ typedef struct sec_sr_resources {
 #endif
 #ifdef CONFIG_MALI_SEC_HWCNT
 typedef struct hwc_resources {
-	u64 arith_words;
-	u64 ls_issues;
-	u64 tex_issues;
-	u64 tripipe_active;
+	u32 arith_words;
+	u32 ls_issues;
+	u32 tex_issues;
+	u32 tripipe_active;
 #ifdef CONFIG_MALI_SEC_HWCNT_VERT
-	u64 gpu_active;
-	u64 js0_active;
-	u64 tiler_active;
-	u64 external_read_bits;
+	u32 gpu_active;
+	u32 js0_active;
+	u32 tiler_active;
+	u32 external_read_bits;
 #endif
 } hwc_resources;
 #endif

@@ -225,7 +225,7 @@ void dvfs_hwcnt_utilization_equation(struct kbase_device *kbdev)
 	struct exynos_context *platform;
 	int total_util;
 	unsigned int debug_util;
-	u64 arith, ls, tex, tripipe;
+	u32 arith, ls, tex, tripipe;
 #ifdef CONFIG_MALI_SEC_HWCNT_VERT
 	static int vertex_count = 0;
 	static int vertex_inc = 0;
@@ -239,9 +239,9 @@ void dvfs_hwcnt_utilization_equation(struct kbase_device *kbdev)
 	ls = kbdev->hwcnt.resources.ls_issues / tripipe;
 	tex = kbdev->hwcnt.resources.tex_issues / tripipe;
 
-	GPU_LOG(DVFS_INFO, DUMMY, 0u, 0u, "%llu, %llu, %llu, %llu\n", tripipe, arith, ls, tex);
+	GPU_LOG(DVFS_INFO, DUMMY, 0u, 0u, "%u, %u, %u, %u\n", tripipe, arith, ls, tex);
 #ifdef CONFIG_MALI_SEC_HWCNT_VERT
-	GPU_LOG(DVFS_INFO, DUMMY, 0u, 0u, "%llu, %llu, %llu, %llu\n", kbdev->hwcnt.resources.gpu_active, kbdev->hwcnt.resources.js0_active, kbdev->hwcnt.resources.tiler_active, kbdev->hwcnt.resources.external_read_bits);
+	GPU_LOG(DVFS_INFO, DUMMY, 0u, 0u, "%u, %u, %u, %u\n", kbdev->hwcnt.resources.gpu_active, kbdev->hwcnt.resources.js0_active, kbdev->hwcnt.resources.tiler_active, kbdev->hwcnt.resources.external_read_bits);
 #endif
 
 	total_util = arith * 25 + ls * 40 + tex * 35;
