@@ -29,8 +29,9 @@ struct unix_address {
 
 struct unix_skb_parms {
 	struct pid		*pid;		/* Skb credentials	*/
-	kuid_t			uid;
-	kgid_t			gid;
+/*	kuid_t			uid;
+	kgid_t			gid; */
+	const struct cred	*cred;
 	struct scm_fp_list	*fp;		/* Passed files		*/
 #ifdef CONFIG_SECURITY_NETWORK
 	u32			secid;		/* Security ID		*/
