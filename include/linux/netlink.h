@@ -5,7 +5,7 @@
 #include <linux/capability.h>
 #include <linux/skbuff.h>
 #include <linux/export.h>
-#include <net/scm.h>
+/* #include <net/scm.h> */
 #include <uapi/linux/netlink.h>
 
 struct net;
@@ -22,7 +22,8 @@ enum netlink_skb_flags {
 };
 
 struct netlink_skb_parms {
-	struct scm_creds	creds;		/* Skb credentials	*/
+/*	struct scm_creds	creds; */		/* Skb credentials	*/
+	struct ucred		creds;		/* Skb credentials	*/
 	__u32			portid;
 	__u32			dst_group;
 	__u32			flags;
