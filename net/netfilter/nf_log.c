@@ -253,7 +253,8 @@ static int nf_log_proc_dostring(ctl_table *table, int write,
 	size_t size = *lenp;
 	int r = 0;
 	int tindex = (unsigned long)table->extra1;
-	struct net *net = current->nsproxy->net_ns;
+/*	struct net *net = current->nsproxy->net_ns; */
+	struct net *net;
 
 	if (write) {
 		if (size > sizeof(buf))
