@@ -1106,7 +1106,7 @@ static int misc_open(struct inode *inode, struct file *filp)
 		}
 	}
 
-	mif_err("%s (opened %d)\n", iod->name, atomic_read(&iod->opened));
+	mif_info("%s (opened %d)\n", iod->name, atomic_read(&iod->opened));
 
 	return 0;
 }
@@ -1124,7 +1124,7 @@ static int misc_release(struct inode *inode, struct file *filp)
 		if (IS_CONNECTED(iod, ld)) {
 			struct header_data *hdr = &fragdata(iod, ld)->h_post;
 			if (hdr->frag_len > 0) {
-				mif_err("fragdata should be cleared.(%d)\n",
+				mif_info("fragdata should be cleared.(%d)\n",
 								hdr->frag_len);
 				memset(fragdata(iod, ld),
 					0x00, sizeof(struct fragmented_data));
@@ -1134,7 +1134,7 @@ static int misc_release(struct inode *inode, struct file *filp)
 		}
 	}
 
-	mif_err("%s (opened %d)\n", iod->name, atomic_read(&iod->opened));
+	mif_info("%s (opened %d)\n", iod->name, atomic_read(&iod->opened));
 
 	return 0;
 }
@@ -1214,7 +1214,7 @@ static long misc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		return iod->mc->ops.modem_boot_off(iod->mc);
 
 	case IOCTL_MODEM_BOOT_DONE:
-		mif_err("%s: IOCTL_MODEM_BOOT_DONE\n", iod->name);
+		mif_info("%s: IOCTL_MODEM_BOOT_DONE\n", iod->name);
 		if (iod->mc->ops.modem_boot_done)
 			return iod->mc->ops.modem_boot_done(iod->mc);
 		else
@@ -1546,7 +1546,7 @@ static int vnet_open(struct net_device *ndev)
 	struct vnet *vnet = netdev_priv(ndev);
 	struct io_device *iod = vnet->iod;
 
-	mif_err("%s\n", iod->name);
+	mif_info("%s\n", iod->name);
 
 	netif_start_queue(ndev);
 	atomic_inc(&iod->opened);
@@ -1559,7 +1559,7 @@ static int vnet_stop(struct net_device *ndev)
 	struct vnet *vnet = netdev_priv(ndev);
 	struct io_device *iod = vnet->iod;
 
-	mif_err("%s\n", iod->name);
+	mif_info("%s\n", iod->name);
 
 	atomic_dec(&iod->opened);
 	netif_stop_queue(ndev);
@@ -1579,7 +1579,7 @@ static int vnet_xmit(struct sk_buff *skb, struct net_device *ndev)
 	int ret;
 
 	if (skb_headroom(skb) < iod->headroom || skb_tailroom(skb) < tailroom) {
-		mif_err("%s: skb needs copy_expand hr=%d tr=%d, iod hr=%d\n",
+		mif_info("%s: skb needs copy_expand hr=%d tr=%d, iod hr=%d\n",
 			iod->name,
 			skb_headroom(skb), skb_tailroom(skb),
 			iod->headroom);
@@ -1702,7 +1702,7 @@ int sipc5_init_io_device(struct io_device *iod)
 				mif_err("failed to create `dm_state' : %s\n",
 					iod->name);
 			else
-				mif_err("dm_state : %s, sucess\n", iod->name);
+				mif_info("dm_state : %s, sucess\n", iod->name);
 		}
 
 		break;

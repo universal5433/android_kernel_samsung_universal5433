@@ -672,7 +672,7 @@ static int mem_init_comm(struct link_device *ld, struct io_device *iod)
 		check_iod = link_get_iod_with_channel(ld, (id + rfs2fmt));
 		if (check_iod) {
 			if (atomic_read(&check_iod->opened)) {
-				mif_err("%s: %s->INIT_END->%s\n",
+				mif_info("%s: %s->INIT_END->%s\n",
 					ld->name, iod->name, mc->name);
 				__tx_iosm_message(mld, IOSM_A2C_INIT_END);
 				atomic_set(&mld->cp_boot_done, 1);

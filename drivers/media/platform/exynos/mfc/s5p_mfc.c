@@ -2311,7 +2311,7 @@ static int s5p_mfc_open(struct file *file)
 
 				ret = exynos_smc(SMC_DRM_FW_LOADING, fw_start, nfw_start, dev->fw_size);
 				if (ret) {
-					mfc_err_ctx("MFC DRM F/W(%x) is skipped\n", ret);
+					mfc_info_ctx("MFC DRM F/W(%x) is skipped\n", ret);
 					dev->drm_fw_status = 0;
 				} else {
 					dev->drm_fw_status = 1;

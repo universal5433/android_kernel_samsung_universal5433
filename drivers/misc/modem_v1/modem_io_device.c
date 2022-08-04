@@ -996,7 +996,7 @@ static int misc_open(struct inode *inode, struct file *filp)
 		}
 	}
 
-	mif_err("%s (opened %d) by %s\n",
+	mif_info("%s (opened %d) by %s\n",
 		iod->name, atomic_read(&iod->opened), current->comm);
 
 	return 0;
@@ -1016,7 +1016,7 @@ static int misc_release(struct inode *inode, struct file *filp)
 			ld->terminate_comm(ld, iod);
 	}
 
-	mif_err("%s (opened %d) by %s\n",
+	mif_info("%s (opened %d) by %s\n",
 		iod->name, atomic_read(&iod->opened), current->comm);
 
 	return 0;
@@ -1314,7 +1314,7 @@ static long misc_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		if (ld->ioctl)
 			return ld->ioctl(ld, iod, cmd, arg);
 
-		mif_info("%s: ERR! undefined cmd 0x%X\n", iod->name, cmd);
+		mif_err("%s: ERR! undefined cmd 0x%X\n", iod->name, cmd);
 		return -EINVAL;
 	}
 

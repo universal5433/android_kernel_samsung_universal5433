@@ -215,7 +215,7 @@ int mem_start_download(struct link_device *ld, struct io_device *iod)
 				ld->name, magic, MEM_BOOT_MAGIC);
 			return -EFAULT;
 		}
-		mif_err("%s: magic == 0x%08X\n", ld->name, magic);
+		mif_info("%s: magic == 0x%08X\n", ld->name, magic);
 	}
 
 	return 0;
