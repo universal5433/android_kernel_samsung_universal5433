@@ -242,27 +242,27 @@ static irqreturn_t arizona_underclocked(int irq, void *data)
 	}
 
 	if (val & ARIZONA_AIF3_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "AIF3 underclocked\n");
+		dev_info(arizona->dev, "AIF3 underclocked\n");
 	if (val & ARIZONA_AIF2_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "AIF2 underclocked\n");
+		dev_info(arizona->dev, "AIF2 underclocked\n");
 	if (val & ARIZONA_AIF1_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "AIF1 underclocked\n");
+		dev_info(arizona->dev, "AIF1 underclocked\n");
 	if (val & ARIZONA_ISRC3_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "ISRC3 underclocked\n");
+		dev_info(arizona->dev, "ISRC3 underclocked\n");
 	if (val & ARIZONA_ISRC2_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "ISRC2 underclocked\n");
+		dev_info(arizona->dev, "ISRC2 underclocked\n");
 	if (val & ARIZONA_ISRC1_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "ISRC1 underclocked\n");
+		dev_info(arizona->dev, "ISRC1 underclocked\n");
 	if (val & ARIZONA_FX_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "FX underclocked\n");
+		dev_info(arizona->dev, "FX underclocked\n");
 	if (val & ARIZONA_ASRC_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "ASRC underclocked\n");
+		dev_info(arizona->dev, "ASRC underclocked\n");
 	if (val & ARIZONA_DAC_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "DAC underclocked\n");
+		dev_info(arizona->dev, "DAC underclocked\n");
 	if (val & ARIZONA_ADC_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "ADC underclocked\n");
+		dev_info(arizona->dev, "ADC underclocked\n");
 	if (val & ARIZONA_MIXER_UNDERCLOCKED_STS)
-		dev_err(arizona->dev, "Mixer dropped sample\n");
+		dev_info(arizona->dev, "Mixer dropped sample\n");
 
 	return IRQ_HANDLED;
 }

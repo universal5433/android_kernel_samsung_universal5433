@@ -799,7 +799,7 @@ static int exynos_lli_loopback_test(struct mipi_lli *lli)
 	uval = readl(phy->loc_regs + (0x23*4));
 	dev_err(lli->dev, "LB error : 0x%x\n", uval);
 	if (uval == 0x24)
-		dev_err(lli->dev, "PWM loopbacktest is Passed!!");
+		dev_info(lli->dev, "PWM loopbacktest is Passed!!");
 	else
 		dev_err(lli->dev, "PWM loopbacktest is Failed!!");
 
@@ -809,7 +809,7 @@ static int exynos_lli_loopback_test(struct mipi_lli *lli)
 	uval = readl(phy->loc_regs + (0x26*4)); /* o_pll_lock[7] */
 	writel(0x0, lli->regs + EXYNOS_PA_MPHY_CMN_ENABLE);
 
-	dev_err(lli->dev, "uval : %d\n", uval);
+	dev_info(lli->dev, "uval : %d\n", uval);
 
 	return 0;
 }
@@ -858,7 +858,7 @@ static irqreturn_t exynos_mipi_lli_threaded_irq(int irq, void *_dev)
 		is_first = false;
 	}
 
-	dev_err(dev, "rx=%x, tx=%x, afc=%x, status=%x, pa_err=%x\n"
+	dev_info(dev, "rx=%x, tx=%x, afc=%x, status=%x, pa_err=%x\n"
 			,rx_fsm_state, tx_fsm_state, afc_val, csa_status, pa_err_cnt);
 
 	if (!credit) {
@@ -870,7 +870,7 @@ static irqreturn_t exynos_mipi_lli_threaded_irq(int irq, void *_dev)
 			if (credit)
 				break;
 		}
-		dev_err(dev, "waiting %dms for CREDITS: rx=%x, tx=%x\n", delay,
+		dev_info(dev, "waiting %dms for CREDITS: rx=%x, tx=%x\n", delay,
 				readl(phy->loc_regs + PHY_RX_FSM_STATE(0)),
 				readl(phy->loc_regs + PHY_TX_FSM_STATE(0)));
 
@@ -888,7 +888,7 @@ static irqreturn_t exynos_mipi_lli_threaded_irq(int irq, void *_dev)
 
 	atomic_set(&lli->state, LLI_MOUNTED);
 	atomic_inc(&lli->mnt_cnt);
-	dev_err(dev, "Mount (ok:%d fail:%d roe:%d pa_err:%d)\n",
+	dev_info(dev, "Mount (ok:%d fail:%d roe:%d pa_err:%d)\n",
 			++mnt_cnt, mnt_fail_cnt, roe_cnt, pa_err_cnt);
 
 	if (pm_svc && pm_svc->mount_cb)
@@ -909,13 +909,13 @@ static irqreturn_t exynos_mipi_lli_irq(int irq, void *_dev)
 	status = readl(lli->regs + EXYNOS_DME_LLI_INTR_STATUS);
 
 	if (status & INTR_SW_RESET_DONE) {
-		dev_err(dev, "SW_RESET_DONE ++\n");
+		dev_info(dev, "SW_RESET_DONE ++\n");
 		exynos_lli_setting(lli);
 
 		lli->is_debug_possible = true;
 
 		if (status & INTR_RESET_ON_ERROR_DETECTED) {
-			dev_err(dev, "LLI is wating for mount after LINE-RESET..\n");
+			dev_info(dev, "LLI is wating for mount after LINE-RESET..\n");
 			atomic_set(&lli->state, LLI_WAITFORMOUNT);
 		}
 
@@ -1006,7 +1006,7 @@ static irqreturn_t exynos_mipi_lli_irq(int irq, void *_dev)
 		if (!pm_svc || !pm_svc->unmount_cb)
 			exynos_lli_init(lli);
 
-		dev_err(dev, "Unmount\n");
+		dev_info(dev, "Unmount\n");
 
 		lli->is_debug_possible = false;
 
