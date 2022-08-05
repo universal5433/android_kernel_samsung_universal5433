@@ -978,24 +978,24 @@ static irqreturn_t exynos_mipi_lli_irq(int irq, void *_dev)
 	}
 
 	if (status & INTR_DL_ERROR_INDICATION) {
-		dev_err(dev, "DL_REASON %x\n",
+		dev_info(dev, "DL_REASON %x\n",
 			readl(lli->regs + EXYNOS_DME_LLI_DL_INTR_REASON));
 	}
 
 	if (status & INTR_TL_ERROR_INDICATION) {
-		dev_err(dev, "TL_REASON %x\n",
+		dev_info(dev, "TL_REASON %x\n",
 			readl(lli->regs + EXYNOS_DME_LLI_TL_INTR_REASON));
 	}
 
 	if (status & INTR_IAL_ERROR_INDICATION) {
-		dev_err(dev, "IAL_REASON0 %x, REASON1 %x\n",
+		dev_info(dev, "IAL_REASON0 %x, REASON1 %x\n",
 			readl(lli->regs + EXYNOS_DME_LLI_IAL_INTR_REASON0),
 			readl(lli->regs + EXYNOS_DME_LLI_IAL_INTR_REASON1));
 	}
 
 	if (status & INTR_LLI_MOUNT_DONE) {
 		writel(status, lli->regs + EXYNOS_DME_LLI_INTR_STATUS);
-		dev_err(dev, "Mount intr\n");
+		dev_info(dev, "Mount intr\n");
 
 		return IRQ_WAKE_THREAD;
 	}
