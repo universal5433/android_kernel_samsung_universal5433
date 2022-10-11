@@ -390,7 +390,7 @@ int __init exynos5_cpufreq_CA7_init(struct exynos_dvfs_info *info)
 	info->pll_safe_idx = L12;
 	info->max_support_idx = max_support_idx_CA7;
 	info->min_support_idx = min_support_idx_CA7;
-	info->boost_freq = exynos5433_freq_table_CA7[L10].frequency; /* 1000MHz */
+	info->boost_freq = exynos5433_freq_table_CA7[L12].frequency; /* 800MHz */
 #ifdef CONFIG_SEC_PM
 	set_boot_kfc_qos_freq(info, L7);
 #else
