@@ -101,8 +101,8 @@ static struct apll_freq exynos5433_apll_freq_CA15[] = {
 	 * PLL M, P, S
 	 */
 	APLL_FREQ(2500, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 625, 6, 0),    /* ARM L0: 2.5GHz  */
-	APLL_FREQ(2400, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 500, 5, 0),    /* ARM L1: 2.4GHz */
-	APLL_FREQ(2300, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 575, 6, 0),    /* ARM L2: 2.3GHz */
+	APLL_FREQ(2400, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 500, 5, 0),    /* ARM L1: 2.4GMHz */
+	APLL_FREQ(2300, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 575, 6, 0),    /* ARM L2: 2.3GMHz */
 	APLL_FREQ(2200, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 550, 6, 0),    /* ARM L3: 2.2GHz  */
 	APLL_FREQ(2100, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 350, 4, 0),    /* ARM L4: 2.1GHz  */
 	APLL_FREQ(2000, 0, 0, 4, 7, 7, 7, 7, 0, 1, 7, 0, 500, 6, 0),    /* ARM L5: 2.0GHz  */
@@ -130,30 +130,30 @@ static struct apll_freq exynos5433_apll_freq_CA15[] = {
  * ASV group voltage table
  */
 static const unsigned int asv_voltage_5433_CA15[CPUFREQ_LEVEL_END_CA15] = {
-	1325000,	/* L0  2500 */
-	1325000,	/* L1  2400 */
-	1325000,	/* L2  2300 */
-	1325000,	/* L3  2200 */
-	1325000,	/* L4  2100 */
-	1287500,	/* L5  2000 */
-	1237500,	/* L6  1900 */
-	1187500,	/* L7  1800 */
-	1150000,	/* L8  1700 */
-	1112500,	/* L9  1600 */
-	1087500,	/* L10 1500 */
-	1062500,	/* L11 1400 */
-	1037500,	/* L12 1300 */
-	1012500,	/* L13 1200 */
-	 987500,	/* L14 1100 */
-	 950000,	/* L15 1000 */
-	 912500,	/* L16  900 */
-	 887500,	/* L17  800 */
-	 887500,	/* L18  700 */
-	 875000,	/* L19  600 */
-	 875000,	/* L20  500 */
-	 875000,	/* L21  400 */
-	 875000,	/* L22  300 */
-	 875000,	/* L23  200 */
+	1350000,	/* L0  2500 */
+	1350000,	/* L1  2400 */
+	1350000,	/* L2  2300 */
+	1350000,	/* L3  2200 */
+	1350000,	/* L4  2100 */
+	1312500,	/* L5  2000 */
+	1262500,	/* L6  1900 */
+	1212500,	/* L7  1800 */
+	1175000,	/* L8  1700 */
+	1137500,	/* L9  1600 */
+	1112500,	/* L10 1500 */
+	1087500,	/* L11 1400 */
+	1062500,	/* L12 1300 */
+	1037500,	/* L13 1200 */
+	1012500,	/* L14 1100 */
+	 975000,	/* L15 1000 */
+	 937500,	/* L16  900 */
+	 912500,	/* L17  800 */
+	 912500,	/* L18  700 */
+	 900000,	/* L19  600 */
+	 900000,	/* L20  500 */
+	 900000,	/* L21  400 */
+	 900000,	/* L22  300 */
+	 900000,	/* L23  200 */
 };
 
 /* Minimum memory throughput in megabytes per second */
@@ -404,7 +404,11 @@ static void __init set_volt_table_CA15(void)
 		max_support_idx_CA15 = L7;	/* 1.8 GHz */
 		break;
 	default :
-		max_support_idx_CA15 = L4;	/* 2.1 GHz */
+#if defined(CONFIG_SOC_EXYNOS5433_L)
+		max_support_idx_CA15 = L7;	/* 1.8 GHz */
+#else
+		max_support_idx_CA15 = L6;	/* 1.9 GHz */
+#endif
 	}
 
 	if (is_max_limit_sample() == 1)
@@ -508,12 +512,12 @@ int __init exynos5_cpufreq_CA15_init(struct exynos_dvfs_info *info)
 #ifdef CONFIG_SEC_PM
 	set_boot_cpu_qos_freq(info, L10);
 #else
-	/* booting frequency is 1.7GHz */
-	info->boot_cpu_min_qos = exynos5433_freq_table_CA15[L8].frequency;
-	info->boot_cpu_max_qos = exynos5433_freq_table_CA15[L8].frequency;
+	/* booting frequency is 1.5GHz */
+	info->boot_cpu_min_qos = exynos5433_freq_table_CA15[L10].frequency;
+	info->boot_cpu_max_qos = exynos5433_freq_table_CA15[L10].frequency;
 #endif
-	/* reboot limit frequency is 1.2GHz */
-	info->reboot_limit_freq = exynos5433_freq_table_CA15[L13].frequency;
+	/* reboot limit frequency is 800MHz */
+	info->reboot_limit_freq = exynos5433_freq_table_CA15[L17].frequency;
 	info->bus_table = exynos5433_bus_table_CA15;
 	info->cpu_clk = fout_egl_pll;
 

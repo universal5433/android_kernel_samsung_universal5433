@@ -1042,80 +1042,25 @@ static void setup_sysfs(struct arbiter_data *arb)
 	}
 }
 
-static struct cpu_cluster_efficiency *c_eff = NULL;
-
-static void ipa_setup_power_tables(void)
+static void setup_power_tables(void)
 {
 	struct cpu_power_info t;
 	int i;
 
 	t.load[0] = 100; t.load[1] = t.load[2] = t.load[3] = 0;
 	t.cluster = CA7;
-
-	if (c_eff == NULL) {
-		c_eff = kzalloc(sizeof(struct cpu_cluster_efficiency) * (CA15 + 1), GFP_KERNEL);
-	
-		c_eff[CA7].arch_efficiency = 100;
-		c_eff[CA7].n_p_states = NR_A7_COEFFS;
-		c_eff[CA7].p_states = kzalloc(sizeof(struct cpu_p_state) * NR_A7_COEFFS, GFP_KERNEL);
-		
-		c_eff[CA15].arch_efficiency = 208;
-		c_eff[CA15].n_p_states = NR_A15_COEFFS;
-		c_eff[CA15].p_states = kzalloc(sizeof(struct cpu_p_state) * NR_A15_COEFFS, GFP_KERNEL);
-	}
-
 	for (i = 0; i < NR_A7_COEFFS; i++) {
-		c_eff[CA7].p_states[i].freq = t.freq = MHZ_TO_KHZ(a7_cpu_coeffs[i].frequency);
-		c_eff[CA7].p_states[i].power = a7_cpu_coeffs[i].power = get_power_value(&t);
-		c_eff[CA7].p_states[i].capacity = (t.freq / 1000) * c_eff[CA7].arch_efficiency;
-		c_eff[CA7].p_states[i].efficiency = 
-			((c_eff[CA7].p_states[i].freq / 1000) * c_eff[CA7].arch_efficiency)
-			/ c_eff[CA7].p_states[i].power;
+		t.freq = MHZ_TO_KHZ(a7_cpu_coeffs[i].frequency);
+		a7_cpu_coeffs[i].power = get_power_value(&t);
 		pr_info("cluster: %d freq: %d power=%d\n", CA7, t.freq, a7_cpu_coeffs[i].power);
 	}
 
 	t.cluster = CA15;
 	for (i = 0; i < NR_A15_COEFFS; i++) {
-		c_eff[CA15].p_states[i].freq = t.freq = MHZ_TO_KHZ(a15_cpu_coeffs[i].frequency);
-		c_eff[CA15].p_states[i].power = a15_cpu_coeffs[i].power = get_power_value(&t);
-		c_eff[CA15].p_states[i].capacity = (t.freq / 1000) * c_eff[CA15].arch_efficiency;
-		c_eff[CA15].p_states[i].efficiency = 
-			((c_eff[CA15].p_states[i].freq / 1000) * c_eff[CA15].arch_efficiency)
-			/ c_eff[CA15].p_states[i].power;
+		t.freq = MHZ_TO_KHZ(a15_cpu_coeffs[i].frequency);
+		a15_cpu_coeffs[i].power = get_power_value(&t);
 		pr_info("cluster: %d freq: %d power=%d\n", CA15, t.freq, a15_cpu_coeffs[i].power);
 	}
-
-	sched_update_cpu_efficiency_table(&c_eff[CA7], CA7);
-	sched_update_cpu_efficiency_table(&c_eff[CA15], CA15);
-}
-
-static void ipa_setup_max_limits(void)
-{
-	int i;
-
-	arbiter_data.gpu_freq_limit = get_ipa_dvfs_max_freq();
-	arbiter_data.cpu_freq_limits[CA15] = get_real_max_freq(CA15);
-	arbiter_data.cpu_freq_limits[CA7] = get_real_max_freq(CA7);
-	for (i = 0; i < NR_CPUS; i++) {
-		arbiter_data.cpu_freqs[CA15][i] = get_real_max_freq(CA15);
-		arbiter_data.cpu_freqs[CA7][i] = get_real_max_freq(CA7);
-	}
-
-	/* reconfigure max */
-	arbiter_data.config.a7_max_power = freq_to_power(KHZ_TO_MHZ(arbiter_data.cpu_freq_limits[CA7]),
-							NR_A7_COEFFS, a7_cpu_coeffs) * cpumask_weight(arbiter_data.cl_stats[CA7].mask);
-
-	arbiter_data.config.a15_max_power = freq_to_power(KHZ_TO_MHZ(arbiter_data.cpu_freq_limits[CA15]),
-							NR_A15_COEFFS, a15_cpu_coeffs) * cpumask_weight(arbiter_data.cl_stats[CA15].mask);
-
-	arbiter_data.config.gpu_max_power = kbase_platform_dvfs_freq_to_power(arbiter_data.gpu_freq_limit);
-
-	arbiter_data.config.soc_max_power = arbiter_data.config.gpu_max_power +
-		arbiter_data.config.a15_max_power +
-		arbiter_data.config.gpu_max_power;
-	/* TODO when we introduce dynamic RoS power we need
-	   to add a ros_max_power !! */
-	arbiter_data.config.soc_max_power += arbiter_data.config.ros_power;
 }
 
 static int __maybe_unused read_soc_temperature(void)
@@ -1362,7 +1307,7 @@ static void arbiter_calc(int currT)
 	trace_data.a15_nutil = (arbiter_data.cl_stats[CA15].util * arbiter_data.cl_stats[CA15].freq) / get_real_max_freq(CA15);
 	trace_data.a7_freq_in = KHZ_TO_MHZ(arbiter_data.cl_stats[CA7].freq);
 	trace_data.a7_util = arbiter_data.cl_stats[CA7].util;
-	trace_data.a7_nutil = (arbiter_data.cl_stats[CA7].util * arbiter_data.cl_stats[CA7].freq) / get_real_max_freq(CA7);
+	trace_data.a7_nutil = (arbiter_data.cl_stats[CA7].util * arbiter_data.cl_stats[CA7].freq) / get_real_max_freq(CA7);;
 	trace_data.Pgpu_in = Pgpu_in / 100;
 	trace_data.Pa15_in =  Pa15_in / 100;
 	trace_data.Pa7_in = Pa7_in / 100;
@@ -1483,13 +1428,10 @@ int thermal_unregister_notifier(struct notifier_block *nb)
 extern bool exynos_cpufreq_init_done;
 static struct delayed_work init_work;
 
-void ipa_update(void)
-{
-	ipa_setup_power_tables();
-}
-
 static void arbiter_init(struct work_struct *work)
 {
+	int i;
+
 	if (!exynos_cpufreq_init_done) {
 		pr_info("exynos_cpufreq not initialized. Deferring again...\n");
 		queue_delayed_work(system_freezable_wq, &init_work,
@@ -1497,13 +1439,36 @@ static void arbiter_init(struct work_struct *work)
 		return;
 	}
 
+	arbiter_data.gpu_freq_limit = get_ipa_dvfs_max_freq();
+	arbiter_data.cpu_freq_limits[CA15] = get_real_max_freq(CA15);
+	arbiter_data.cpu_freq_limits[CA7] = get_real_max_freq(CA7);
+	for (i = 0; i < NR_CPUS; i++) {
+		arbiter_data.cpu_freqs[CA15][i] = get_real_max_freq(CA15);
+		arbiter_data.cpu_freqs[CA7][i] = get_real_max_freq(CA7);
+	}
+
 	setup_cpusmasks(arbiter_data.cl_stats);
 
 	reset_arbiter_configuration(&arbiter_data.config);
 	arbiter_data.debugfs_root = setup_debugfs(&arbiter_data.config);
 	setup_sysfs(&arbiter_data);
-	ipa_setup_power_tables();
-	ipa_setup_max_limits();
+	setup_power_tables();
+
+	/* reconfigure max */
+	arbiter_data.config.a7_max_power = freq_to_power(KHZ_TO_MHZ(arbiter_data.cpu_freq_limits[CA7]),
+							NR_A7_COEFFS, a7_cpu_coeffs) * cpumask_weight(arbiter_data.cl_stats[CA7].mask);
+
+	arbiter_data.config.a15_max_power = freq_to_power(KHZ_TO_MHZ(arbiter_data.cpu_freq_limits[CA15]),
+							NR_A15_COEFFS, a15_cpu_coeffs) * cpumask_weight(arbiter_data.cl_stats[CA15].mask);
+
+	arbiter_data.config.gpu_max_power = kbase_platform_dvfs_freq_to_power(arbiter_data.gpu_freq_limit);
+
+	arbiter_data.config.soc_max_power = arbiter_data.config.gpu_max_power +
+		arbiter_data.config.a15_max_power +
+		arbiter_data.config.gpu_max_power;
+	/* TODO when we introduce dynamic RoS power we need
+	   to add a ros_max_power !! */
+	arbiter_data.config.soc_max_power += arbiter_data.config.ros_power;
 
 	INIT_DELAYED_WORK(&arbiter_data.work, arbiter_poll);
 
