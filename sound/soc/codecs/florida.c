@@ -2150,6 +2150,10 @@ static int florida_codec_probe(struct snd_soc_codec *codec)
 	arizona_init_mono(codec);
 	arizona_init_input(codec);
 
+	/* Update Sample Rate 1 to 48kHz for cases when no AIF1 hw_params */
+	regmap_update_bits(arizona->regmap, ARIZONA_SAMPLE_RATE_1,
+			   ARIZONA_SAMPLE_RATE_1_MASK, 0x03);
+
 	ret = snd_soc_add_codec_controls(codec, wm_adsp2_fw_controls, 8);
 	if (ret != 0)
 		return ret;

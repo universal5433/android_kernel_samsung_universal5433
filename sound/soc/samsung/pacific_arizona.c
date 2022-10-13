@@ -1170,6 +1170,10 @@ static int pacific_aif2_hw_params(struct snd_pcm_substream *substream,
 		}
 	}
 
+	/* Set Sample rate 1 as 48k */
+	snd_soc_update_bits(priv->codec, ARIZONA_SAMPLE_RATE_1,
+			    ARIZONA_SAMPLE_RATE_1_MASK, 0x3);
+
 	return 0;
 }
 
