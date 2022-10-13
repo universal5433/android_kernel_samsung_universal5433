@@ -1869,9 +1869,9 @@ extern struct exynos_tmu_data {
 
 static ssize_t show_kernel_sysfs_gpu_temp(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
+	int temp, i, max = INT_MIN, min = INT_MAX, gpu_temp = 0;
+	int alltemp[EXYNOS_TMU_COUNT] = {0, };
 	ssize_t ret = 0;
-	static int gpu_temp = 0;
-	int gpu_temp_retVal = 0;
 	int gpu_temp_int = 0;
 	int gpu_temp_point = 0;
 	struct exynos_tmu_data *data = NULL;
@@ -1882,13 +1882,41 @@ static ssize_t show_kernel_sysfs_gpu_temp(struct kobject *kobj, struct kobj_attr
 	}
 
 	data = gpu_thermal_data_ptr;
+
 	mutex_lock(&data->lock);
-	gpu_temp_retVal = cal_tmu_read(data->cal_data, EXYNOS_GPU_NUMBER);
+
+    for (i = 0; i < EXYNOS_TMU_COUNT; i++) {
+        temp = cal_tmu_read(data->cal_data, i);
+        alltemp[i] = temp;
+
+        if (i == EXYNOS_GPU_NUMBER) {
+            if ((soc_is_exynos5430() || soc_is_exynos5433()) && !gpu_is_power_on())
+                temp = COLD_TEMP + 1;
+            gpu_temp = temp;
+        } else {
+            if (temp > max)
+                max = temp;
+            if (temp < min)
+                min = temp;
+        }
+    }
+    temp = max(max, gpu_temp);
+
+#ifdef CONFIG_SOC_EXYNOS5433
+    if (alltemp[3] > 80 && alltemp[3] < 86 && max < 101) {
+        max = 98;
+        if (alltemp[2] < 96)
+            gpu_temp = 98;
+    }
+    else if (alltemp[3] > 85) {
+        max = 112;
+        gpu_temp = 112;
+    }
+#endif
+
 	mutex_unlock(&data->lock);
 
-	if (gpu_temp_retVal > 1) {
-		gpu_temp = gpu_temp_retVal * MCELSIUS;
-	}
+	gpu_temp = gpu_temp * MCELSIUS;
 
 	gpu_temp_int = gpu_temp / 1000;
 	gpu_temp_point = gpu_temp % gpu_temp_int;
