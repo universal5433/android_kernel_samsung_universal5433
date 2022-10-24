@@ -119,22 +119,6 @@ config SOC_EXYNOS5430_REV_1
 	bool "Rev 1.0"
 endchoice
 
-choice
-	prompt "Resolution Type"
-	depends on SOC_EXYNOS5430
-	help
-	  This option selects display resolution type.
-
-config EXYNOS5430_WQHD
-	bool "Resolution WQHD (2560 x 1440)"
-
-config EXYNOS5430_FHD
-	bool "Resolution Full HD (1920 x 1080)"
-
-config EXYNOS5430_HD
-	bool "Resolution HD (1280 x 720)"
-endchoice
-
 menu "Exynos5430 Type"
 	depends on SOC_EXYNOS5430
 
@@ -440,23 +424,23 @@ config BOARD_GTS210LTEXX
 	default n
 
 config BOARD_TRELTEXX
-	bool "Samsung Galaxy N4 LTE (N910C/H)
+	bool "Samsung Galaxy N4 LTE (N910C/H)"
 	default n
 
 config BOARD_TRHPLTEXX
-	bool "Samsung Galaxy N4 LTE (N910U)
+	bool "Samsung Galaxy N4 LTE (N910U)"
 	default n
 
 config BOARD_TRELTESKT
-	bool "Samsung Galaxy N4 LTE SKT (N910S/L/K)
+	bool "Samsung Galaxy N4 LTE SKT (N910S/L/K)"
 	default n
 
 config BOARD_TBELTESKT
-	bool "Samsung Galaxy N4 EDGE LTE SKT (N915S/L/K)
+	bool "Samsung Galaxy N4 EDGE LTE SKT (N915S/L/K)"
 	default n
 
 config BOARD_TRE3CALTESKT
-	bool "Samsung Galaxy N4 S-LTE SKT (N916S/L/K)
+	bool "Samsung Galaxy N4 S-LTE SKT (N916S/L/K)"
 	default n
 
 config MFC_TRELTE
