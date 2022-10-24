@@ -31,25 +31,21 @@ choice
 
 config W1_KTHREAD
 	bool "Using kthread for checking w1 slave"
-	default n
 	help
 	  This allows to start the kthread when w1 master is looking for slaves.
 
 config W1_WORKQUEUE
 	bool "Using workqueue for checking w1 slave"
-	default n
 	help
 	  This allows to start the kthread when w1 master is looking for slaves.
 
 config W1_DETECT_PIN
 	bool "Using detect pin for checking w1 slave"
-	default n
 	help
 	  This allows to start the authorization when w1 master is looking for slaves.
 
 config W1_DETECT_HALL
 	bool "Using detect hall for checking w1 slave"
-	default n
 	help
 	  This allows to start the authorization when w1 master is looking for slaves.
 endchoice
