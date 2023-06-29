@@ -225,7 +225,7 @@ void dvfs_hwcnt_utilization_equation(struct kbase_device *kbdev)
 	struct exynos_context *platform;
 	int total_util;
 	unsigned int debug_util;
-	u32 arith, ls, tex, tripipe;
+	u32 arith = 0, ls = 0, tex = 0, tripipe;
 #ifdef CONFIG_MALI_SEC_HWCNT_VERT
 	static int vertex_count = 0;
 	static int vertex_inc = 0;
@@ -235,9 +235,11 @@ void dvfs_hwcnt_utilization_equation(struct kbase_device *kbdev)
 
 	tripipe = kbdev->hwcnt.resources.tripipe_active / 100;
 
+	if (tripipe > 0) {
 	arith = kbdev->hwcnt.resources.arith_words / tripipe;
 	ls = kbdev->hwcnt.resources.ls_issues / tripipe;
 	tex = kbdev->hwcnt.resources.tex_issues / tripipe;
+	}
 
 	GPU_LOG(DVFS_INFO, DUMMY, 0u, 0u, "%u, %u, %u, %u\n", tripipe, arith, ls, tex);
 #ifdef CONFIG_MALI_SEC_HWCNT_VERT
@@ -252,11 +254,9 @@ void dvfs_hwcnt_utilization_equation(struct kbase_device *kbdev)
 		kbdev->hwcnt.cnt_for_bt_start = 0;
 		return;
 	}
-	if ((((arith * 10 > ls * 14) && (ls < 40)) ||
-		((arith > 55) && (ls > 54) && (tex < 53)) ||
-		((arith > 61) && (ls > 54) && (tex < 45))) &&
-		(total_util > 1000) && (total_util < 6100) &&
-			(platform->cur_clock >= platform->gpu_max_clock_limit)) {
+	if ((arith * 10 > ls * 14) && (ls < 40)
+		&& (total_util > platform->hwcnt_threshold) && (total_util < 4800)
+		&& (platform->cur_clock >= platform->gpu_max_clock_limit)) {
 		kbdev->hwcnt.cnt_for_bt_start++;
 		kbdev->hwcnt.cnt_for_bt_stop = 0;
 		if (kbdev->hwcnt.cnt_for_bt_start > platform->hwcnt_up_step) {

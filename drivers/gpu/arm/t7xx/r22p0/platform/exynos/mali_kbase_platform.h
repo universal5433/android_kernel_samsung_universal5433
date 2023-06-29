@@ -149,6 +149,7 @@ typedef enum {
 	GPU_HWCNT_CHOOSE_TILER,
 	GPU_HWCNT_CHOOSE_L3_CACHE,
 	GPU_HWCNT_CHOOSE_MMU_L2,
+	GPU_HWCNT_THRESHOLD,
 #endif
 	GPU_RUNTIME_PM_DELAY_TIME,
 	GPU_DVFS_POLLING_TIME,
@@ -303,6 +304,8 @@ struct exynos_context {
 	bool hwcnt_bt_clk;
 	int hwcnt_allow_vertex_throttle;
 	bool hwcnt_profile;
+
+	int hwcnt_threshold;
 #endif
 
 	int polling_speed;
