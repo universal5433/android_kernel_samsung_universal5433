@@ -1193,12 +1193,13 @@ const static struct file_operations cputime_fops = {
 
 static int __init dm_cpu_hotplug_init(void)
 {
+	#ifdef CONFIG_ARM_EXYNOS_MP_CPUFREQ
+	struct cpufreq_policy *policy;
+	#endif
+
 	int ret = 0;
 	min_num_cpu = 0;
 	max_num_cpu = NR_CPUS;	
-#ifdef CONFIG_ARM_EXYNOS_MP_CPUFREQ
-	struct cpufreq_policy *policy;
-#endif
 
 	dm_hotplug_task =
 		kthread_create(on_run, NULL, "thread_hotplug");
