@@ -3495,7 +3495,7 @@ non_fips_alg:
 			driver, alg);
 	return rc;
 }
-int __init testmgr_crypto_proc_init(void)
+int __init testmgr_crypto_proc_init(void) // adding __init to fix warning
 {
 #ifdef CONFIG_CRYPTO_FIPS
 	crypto_init_proc(&IN_FIPS_ERROR);
