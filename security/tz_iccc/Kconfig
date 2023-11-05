@@ -11,5 +11,5 @@ config TZ_ICCC
 	bool "TZ ICCC"
 	depends on TIMA && (TZ_ICCC_MOS_SUPPORT || TZ_ICCC_NOS_SUPPORT)
 	default n
-	---help---
-	Provide kernel api for reading and writing ICCC secure parameters.
+	help
+	  Provide kernel api for reading and writing ICCC secure parameters.

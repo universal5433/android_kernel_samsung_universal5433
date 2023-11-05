@@ -465,7 +465,7 @@ void dw_pcie_config_l1ss(struct pcie_port *pp)
 	}
 }
 
-int dw_pcie_host_init(struct pcie_port *pp)
+int __init dw_pcie_host_init(struct pcie_port *pp) // adding __init annotation to fix warning
 {
 	struct device_node *np = pp->dev->of_node;
 	struct of_pci_range range;
