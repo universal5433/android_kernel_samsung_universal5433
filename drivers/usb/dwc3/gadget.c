@@ -46,8 +46,8 @@
 
 int irq_select_affinity_usr(unsigned int irq, struct cpumask *mask);
 
-static struct notifier_block rndis_notifier;
-static int gadget_irq = 0;
+//static struct notifier_block rndis_notifier;
+//static int gadget_irq = 0;
 #endif
 #if defined(CONFIG_USB_SUPER_HIGH_SPEED_SWITCH_CHANGE)
 #define EP0_HS_MPS 64
@@ -1797,12 +1797,12 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 }
 
 static irqreturn_t dwc3_interrupt(int irq, void *_dwc);
-//static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc);
+static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc);
 #ifdef CONFIG_USBIRQ_BALANCING_LTE_HIGHTP
 static int set_cpu_core_from_usb_irq(int enable)
 {
 	int err = 0;
-	unsigned int irq = gadget_irq;
+	unsigned int irq = 0;
 	cpumask_var_t new_value;
 
 	if (!irq_can_set_affinity(irq))
@@ -1829,32 +1829,33 @@ static int set_cpu_core_from_usb_irq(int enable)
 }
 
 
-static int rndis_notify_callback(struct notifier_block *this,
-				unsigned long event, void *ptr)
-{
-	struct net_device *dev = ptr;
+// static int rndis_notify_callback(struct notifier_block *this,
+// 				unsigned long event, void *ptr)
+// {
+// 	struct net_device *dev = ptr;
 
-	if (!net_eq(dev_net(dev), &init_net))
-		return NOTIFY_DONE;
+// 	if (!net_eq(dev_net(dev), &init_net))
+// 		return NOTIFY_DONE;
 
-	if (!strncmp(dev->name, "rndis", 5)) {
-		switch (event) {
-		case NETDEV_UP:
-			set_cpu_core_from_usb_irq(true);
-			break;
-		case NETDEV_DOWN:
-			set_cpu_core_from_usb_irq(false);
-			break;
-		}
-	}
-	return NOTIFY_DONE;
-}
+// 	if (!strncmp(dev->name, "rndis", 5)) {
+// 		switch (event) {
+// 		case NETDEV_UP:
+// 			set_cpu_core_from_usb_irq(true);
+// 			break;
+// 		case NETDEV_DOWN:
+// 			set_cpu_core_from_usb_irq(false);
+// 			break;
+// 		}
+// 	}
+// 	return NOTIFY_DONE;
+// }
 #endif
 
 static int dwc3_gadget_start(struct usb_gadget *g,
 		struct usb_gadget_driver *driver)
 {
 	struct dwc3		*dwc = gadget_to_dwc(g);
+	struct dwc3_ep		*dep;
 	unsigned long		flags;
 	int			ret = 0;
 	int			irq;
@@ -1876,7 +1877,6 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 				dwc->gadget.name,
 				dwc->gadget_driver->driver.name);
 		ret = -EBUSY;
-		goto err1;
 		goto err1;
 	}
 
@@ -2943,7 +2943,6 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
 #endif
 	return ret;
 }
-#if 0
 static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 {
 	struct dwc3 *dwc = _dwc;
@@ -2953,13 +2952,48 @@ static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 
 	spin_lock_irqsave(&dwc->lock, flags);
 
-	for (i = 0; i < dwc->num_event_buffers; i++)
-		ret |= dwc3_process_event_buf(dwc, i);
+	for (i = 0; i < dwc->num_event_buffers; i++) {
+		struct dwc3_event_buffer *evt;
+		int			left;
+
+		evt = dwc->ev_buffs[i];
+		left = evt->count;
+
+		if (!(evt->flags & DWC3_EVENT_PENDING))
+			continue;
+
+		while (left > 0) {
+			union dwc3_event event;
+
+			event.raw = *(u32 *) (evt->buf + evt->lpos);
+
+			dwc3_process_event_entry(dwc, &event);
+
+			/*
+			 * FIXME we wrap around correctly to the next entry as
+			 * almost all entries are 4 bytes in size. There is one
+			 * entry which has 12 bytes which is a regular entry
+			 * followed by 8 bytes data. ATM I don't know how
+			 * things are organized if we get next to the a
+			 * boundary so I worry about that once we try to handle
+			 * that.
+			 */
+			evt->lpos = (evt->lpos + 4) % DWC3_EVENT_BUFFERS_SIZE;
+			left -= 4;
+
+			dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(i), 4);
+		}
+
+		evt->count = 0;
+		evt->flags &= ~DWC3_EVENT_PENDING;
+		ret = IRQ_HANDLED;
+	}
 
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }
+#if 0
 
 static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
 {

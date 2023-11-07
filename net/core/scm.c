@@ -24,6 +24,7 @@
 #include <linux/interrupt.h>
 #include <linux/netdevice.h>
 #include <linux/security.h>
+#include <linux/pid_namespace.h>
 #include <linux/pid.h>
 #include <linux/nsproxy.h>
 #include <linux/slab.h>
@@ -35,6 +36,7 @@
 #include <net/sock.h>
 #include <net/compat.h>
 #include <net/scm.h>
+#include <net/cls_cgroup.h>
 
 
 /*
@@ -45,6 +47,11 @@
 static __inline__ int scm_check_creds(struct ucred *creds)
 {
 	const struct cred *cred = current_cred();
+	kuid_t uid = make_kuid(cred->user_ns, creds->uid);
+	kgid_t gid = make_kgid(cred->user_ns, creds->gid);
+
+	if (!uid_valid(uid) || !gid_valid(gid))
+		return -EINVAL;
 
 	if ((creds->pid == task_tgid_vnr(current) ||
 	     ns_capable(task_active_pid_ns(current)->user_ns, CAP_SYS_ADMIN)) &&
