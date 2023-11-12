@@ -829,7 +829,7 @@ static unsigned int tcp_xmit_size_goal(struct sock *sk, u32 mss_now,
 		 */
 		xmit_size_goal = min_t(u32, xmit_size_goal,
 				       sysctl_tcp_limit_output_bytes >> 1);
-*/
+
 		xmit_size_goal = tcp_bound_to_half_wnd(tp, xmit_size_goal);
 
 		/* We try hard to avoid divides here */
