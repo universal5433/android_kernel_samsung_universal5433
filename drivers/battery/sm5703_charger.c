@@ -202,6 +202,7 @@ static void sm5703_enable_charger_switch(struct sm5703_charger_data *charger,
 	bool prev_charging_status = charger->is_charging;
 	
 	charger->is_charging = onoff ? true : false;
+
 	if (onoff > 0 && (prev_charging_status == false)) {
 		pr_info("%s: turn on charger\n", __func__);
 #ifdef CONFIG_FLED_SM5703
@@ -1825,9 +1826,9 @@ static int sm5703_charger_probe(struct platform_device *pdev)
 		goto err_reg_irq;
 
 	ret = gpio_request(charger->pdata->chgen_gpio, "sm5703_nCHGEN");
-	if (ret) {
-		pr_info("%s : Request GPIO %d failed\n",
-				__func__, (int)charger->pdata->chgen_gpio);
+	if (ret<0) {
+		pr_err("%s : Request GPIO %d failed : %d\n",
+				__func__, (int)charger->pdata->chgen_gpio,ret);
 	}
 
 	sm5703_test_read(charger->sm5703->i2c_client);
@@ -1861,6 +1862,7 @@ static int sm5703_charger_remove(struct platform_device *pdev)
 		wake_lock_destroy(&charger->vbuslimit_wake_lock);
 	}
 	mutex_destroy(&charger->io_lock);
+	gpio_free(charger->pdata->chgen_gpio);
 	kfree(charger);
 	return 0;
 }
