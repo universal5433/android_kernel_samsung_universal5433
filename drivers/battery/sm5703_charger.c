@@ -202,7 +202,6 @@ static void sm5703_enable_charger_switch(struct sm5703_charger_data *charger,
 	bool prev_charging_status = charger->is_charging;
 	
 	charger->is_charging = onoff ? true : false;
-
 	if (onoff > 0 && (prev_charging_status == false)) {
 		pr_info("%s: turn on charger\n", __func__);
 #ifdef CONFIG_FLED_SM5703
