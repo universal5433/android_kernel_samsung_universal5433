@@ -300,10 +300,6 @@ static int evdev_release(struct inode *inode, struct file *file)
 
 	evdev_detach_client(evdev, client);
 
-	if (is_vmalloc_addr(client))
-		vfree(client);
-	else
-		kfree(client);
 	if (client->use_wake_lock)
 		wake_lock_destroy(&client->wake_lock);
 
