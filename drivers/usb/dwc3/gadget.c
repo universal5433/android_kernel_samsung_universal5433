@@ -46,8 +46,8 @@
 
 int irq_select_affinity_usr(unsigned int irq, struct cpumask *mask);
 
-static struct notifier_block rndis_notifier;
-static int gadget_irq = 0;
+//static struct notifier_block rndis_notifier;
+//static int gadget_irq = 0;
 #endif
 #if defined(CONFIG_USB_SUPER_HIGH_SPEED_SWITCH_CHANGE)
 #define EP0_HS_MPS 64
@@ -1310,9 +1310,6 @@ int __dwc3_gadget_ep_set_halt(struct dwc3_ep *dep, int value)
 		else
 			dep->flags |= DWC3_EP_STALL;
 	} else {
-		if (dep->flags & DWC3_EP_WEDGE)
-			return 0;
-
 		ret = dwc3_send_gadget_ep_cmd(dwc, dep->number,
 			DWC3_DEPCMD_CLEARSTALL, &params);
 		if (ret)
@@ -1320,7 +1317,7 @@ int __dwc3_gadget_ep_set_halt(struct dwc3_ep *dep, int value)
 					value ? "set" : "clear",
 					dep->name);
 		else
-			dep->flags &= ~DWC3_EP_STALL;
+			dep->flags &= ~(DWC3_EP_STALL | DWC3_EP_WEDGE);
 	}
 
 	return ret;
@@ -1797,12 +1794,12 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 }
 
 static irqreturn_t dwc3_interrupt(int irq, void *_dwc);
-//static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc);
+static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc);
 #ifdef CONFIG_USBIRQ_BALANCING_LTE_HIGHTP
 static int set_cpu_core_from_usb_irq(int enable)
 {
 	int err = 0;
-	unsigned int irq = gadget_irq;
+	unsigned int irq = 0;
 	cpumask_var_t new_value;
 
 	if (!irq_can_set_affinity(irq))
@@ -1829,39 +1826,41 @@ static int set_cpu_core_from_usb_irq(int enable)
 }
 
 
-static int rndis_notify_callback(struct notifier_block *this,
-				unsigned long event, void *ptr)
-{
-	struct net_device *dev = ptr;
+// static int rndis_notify_callback(struct notifier_block *this,
+// 				unsigned long event, void *ptr)
+// {
+// 	struct net_device *dev = ptr;
 
-	if (!net_eq(dev_net(dev), &init_net))
-		return NOTIFY_DONE;
+// 	if (!net_eq(dev_net(dev), &init_net))
+// 		return NOTIFY_DONE;
 
-	if (!strncmp(dev->name, "rndis", 5)) {
-		switch (event) {
-		case NETDEV_UP:
-			set_cpu_core_from_usb_irq(true);
-			break;
-		case NETDEV_DOWN:
-			set_cpu_core_from_usb_irq(false);
-			break;
-		}
-	}
-	return NOTIFY_DONE;
-}
+// 	if (!strncmp(dev->name, "rndis", 5)) {
+// 		switch (event) {
+// 		case NETDEV_UP:
+// 			set_cpu_core_from_usb_irq(true);
+// 			break;
+// 		case NETDEV_DOWN:
+// 			set_cpu_core_from_usb_irq(false);
+// 			break;
+// 		}
+// 	}
+// 	return NOTIFY_DONE;
+// }
 #endif
 
 static int dwc3_gadget_start(struct usb_gadget *g,
 		struct usb_gadget_driver *driver)
 {
 	struct dwc3		*dwc = gadget_to_dwc(g);
+	struct dwc3_ep		*dep;
 	unsigned long		flags;
 	int			ret = 0;
 	int			irq;
+	u32			reg;
 
 	irq = platform_get_irq(to_platform_device(dwc->dev), 0);
-	ret = devm_request_irq(dwc->dev, irq, dwc3_interrupt,
-			IRQF_SHARED, "dwc3", dwc);
+	ret = request_threaded_irq(irq, dwc3_interrupt, dwc3_thread_interrupt,
+			IRQF_SHARED | IRQF_ONESHOT, "dwc3", dwc);
 	if (ret) {
 		dev_err(dwc->dev, "failed to request irq #%d --> %d\n",
 				irq, ret);
@@ -1880,26 +1879,62 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 
 	dwc->gadget_driver	= driver;
 
+	reg = dwc3_readl(dwc->regs, DWC3_DCFG);
+	reg &= ~(DWC3_DCFG_SPEED_MASK);
+
+	/**
+	 * WORKAROUND: DWC3 revision < 2.20a have an issue
+	 * which would cause metastability state on Run/Stop
+	 * bit if we try to force the IP to USB2-only mode.
+	 *
+	 * Because of that, we cannot configure the IP to any
+	 * speed other than the SuperSpeed
+	 *
+	 * Refers to:
+	 *
+	 * STAR#9000525659: Clock Domain Crossing on DCTL in
+	 * USB 2.0 Mode
+	 */
+	if (dwc->revision < DWC3_REVISION_220A)
+		reg |= DWC3_DCFG_SUPERSPEED;
+	else
+		reg |= dwc->maximum_speed;
+	dwc3_writel(dwc->regs, DWC3_DCFG, reg);
+
+	dwc->start_config_issued = false;
+
+	/* Start with SuperSpeed Default */
+	dwc3_gadget_ep0_desc.wMaxPacketSize = cpu_to_le16(512);
+
+	dep = dwc->eps[0];
+	ret = __dwc3_gadget_ep_enable(dep, &dwc3_gadget_ep0_desc, NULL, false);
+	if (ret) {
+		dev_err(dwc->dev, "failed to enable %s\n", dep->name);
+		goto err2;
+	}
+
+	dep = dwc->eps[1];
+	ret = __dwc3_gadget_ep_enable(dep, &dwc3_gadget_ep0_desc, NULL, false);
+	if (ret) {
+		dev_err(dwc->dev, "failed to enable %s\n", dep->name);
+		goto err3;
+	}
+
+	/* begin to receive SETUP packets */
+	dwc->ep0state = EP0_SETUP_PHASE;
+	dwc3_ep0_out_start(dwc);
+
+	dwc3_gadget_enable_irq(dwc);
+
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
-#ifdef CONFIG_USBIRQ_BALANCING_LTE_HIGHTP
-	gadget_irq = irq;
-	rndis_notifier.notifier_call = rndis_notify_callback;
-	register_netdevice_notifier(&rndis_notifier);
-#endif
-#ifdef CONFIG_ARGOS
-		if (!zalloc_cpumask_var(&affinity_cpu_mask, GFP_KERNEL))
-			return -ENOMEM;
-		if (!zalloc_cpumask_var(&default_cpu_mask, GFP_KERNEL))
-			return -ENOMEM;
-	
-		cpumask_copy(default_cpu_mask, get_default_cpu_mask());
-		cpumask_or(affinity_cpu_mask, affinity_cpu_mask, cpumask_of(3));
-		argos_irq_affinity_setup_label(irq, "USB", affinity_cpu_mask, default_cpu_mask);
-#endif
-
-
 	return 0;
+
+err3:
+	__dwc3_gadget_ep_disable(dwc->eps[0]);
+
+err2:
+	dwc->gadget_driver = NULL;
 
 err1:
 	spin_unlock_irqrestore(&dwc->lock, flags);
@@ -1929,9 +1964,6 @@ static int dwc3_gadget_stop(struct usb_gadget *g,
 
 	irq = platform_get_irq(to_platform_device(dwc->dev), 0);
 	free_irq(irq, dwc);
-#ifdef CONFIG_USBIRQ_BALANCING_LTE_HIGHTP
-	unregister_netdevice_notifier(&rndis_notifier);
-#endif
 
 	return 0;
 }
@@ -2908,7 +2940,6 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
 #endif
 	return ret;
 }
-#if 0
 static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 {
 	struct dwc3 *dwc = _dwc;
@@ -2918,13 +2949,48 @@ static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 
 	spin_lock_irqsave(&dwc->lock, flags);
 
-	for (i = 0; i < dwc->num_event_buffers; i++)
-		ret |= dwc3_process_event_buf(dwc, i);
+	for (i = 0; i < dwc->num_event_buffers; i++) {
+		struct dwc3_event_buffer *evt;
+		int			left;
+
+		evt = dwc->ev_buffs[i];
+		left = evt->count;
+
+		if (!(evt->flags & DWC3_EVENT_PENDING))
+			continue;
+
+		while (left > 0) {
+			union dwc3_event event;
+
+			event.raw = *(u32 *) (evt->buf + evt->lpos);
+
+			dwc3_process_event_entry(dwc, &event);
+
+			/*
+			 * FIXME we wrap around correctly to the next entry as
+			 * almost all entries are 4 bytes in size. There is one
+			 * entry which has 12 bytes which is a regular entry
+			 * followed by 8 bytes data. ATM I don't know how
+			 * things are organized if we get next to the a
+			 * boundary so I worry about that once we try to handle
+			 * that.
+			 */
+			evt->lpos = (evt->lpos + 4) % DWC3_EVENT_BUFFERS_SIZE;
+			left -= 4;
+
+			dwc3_writel(dwc->regs, DWC3_GEVNTCOUNT(i), 4);
+		}
+
+		evt->count = 0;
+		evt->flags &= ~DWC3_EVENT_PENDING;
+		ret = IRQ_HANDLED;
+	}
 
 	spin_unlock_irqrestore(&dwc->lock, flags);
 
 	return ret;
 }
+#if 0
 
 static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
 {

@@ -1797,6 +1797,13 @@ static int sm5703_charger_probe(struct platform_device *pdev)
 	charger->siop_level = 100;
 	charger->ovp = 0;
 	charger->is_mdock = false;
+
+	ret = gpio_request(charger->pdata->chgen_gpio, "sm5703_nCHGEN");
+	if (ret<0) {
+		pr_err("%s : Request GPIO %d failed : %d\n",
+				__func__, (int)charger->pdata->chgen_gpio,ret);
+	}
+
 	sm5703_chg_init(charger);
 
 	charger->wq = create_workqueue("sm5703chg_workqueue");
@@ -1824,12 +1831,6 @@ static int sm5703_charger_probe(struct platform_device *pdev)
 	if (ret < 0)
 		goto err_reg_irq;
 
-	ret = gpio_request(charger->pdata->chgen_gpio, "sm5703_nCHGEN");
-	if (ret) {
-		pr_info("%s : Request GPIO %d failed\n",
-				__func__, (int)charger->pdata->chgen_gpio);
-	}
-
 	sm5703_test_read(charger->sm5703->i2c_client);
 	pr_info("%s:[BATT] SM5703 charger driver loaded OK\n", __func__);
 
@@ -1852,6 +1853,7 @@ err_parse_dt_nomem:
 
 static int sm5703_charger_remove(struct platform_device *pdev)
 {
+	pr_info("%s: SM5703 Charger driver remove\n", __func__);
 	struct sm5703_charger_data *charger =
 		platform_get_drvdata(pdev);
 	unregister_irq(pdev, charger);
@@ -1861,6 +1863,7 @@ static int sm5703_charger_remove(struct platform_device *pdev)
 		wake_lock_destroy(&charger->vbuslimit_wake_lock);
 	}
 	mutex_destroy(&charger->io_lock);
+	gpio_free(charger->pdata->chgen_gpio);
 	kfree(charger);
 	return 0;
 }

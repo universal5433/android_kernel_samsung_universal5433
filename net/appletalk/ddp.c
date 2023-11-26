@@ -1770,7 +1770,7 @@ static int atalk_recvmsg(struct kiocb *iocb, struct socket *sock, struct msghdr 
 		sat->sat_addr.s_node = ddp->deh_snode;
 		sat->sat_addr.s_net  = ddp->deh_snet;
 		msg->msg_namelen     = sizeof(*sat);
- 	}
+	}
 
 	skb_free_datagram(sk, skb);	/* Free the datagram. */
 
