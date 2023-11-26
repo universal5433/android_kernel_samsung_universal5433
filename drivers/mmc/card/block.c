@@ -2374,7 +2374,6 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 	struct mmc_blk_data *md = mq->data;
 	struct mmc_card *card = md->queue.card;
 	struct mmc_host *host = card->host;
-	unsigned int cmd_flags = req ? req->cmd_flags : 0;
 	unsigned long flags;
 	unsigned int cmd_flags = req ? req->cmd_flags : 0;
 
