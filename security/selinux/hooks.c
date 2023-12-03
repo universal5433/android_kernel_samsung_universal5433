@@ -1421,7 +1421,7 @@ static int inode_doinit_with_dentry(struct inode *inode, struct dentry *opt_dent
 	default:
 		/* Default to the fs superblock SID. */
 		isec->sid = sbsec->sid;
-
+		
 		if ((sbsec->flags & SE_SBGENFS) && !S_ISLNK(inode->i_mode)) {
 			/* We must have a dentry to determine the label on
 			 * procfs inodes */
@@ -1464,6 +1464,7 @@ out:
 		isec->sclass = inode_mode_to_security_class(inode->i_mode);
 	return rc;
 }
+
 
 /* Convert a Linux signal to an access vector. */
 static inline u32 signal_to_av(int sig)

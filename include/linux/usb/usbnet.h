@@ -30,7 +30,7 @@ struct usbnet {
 	struct driver_info	*driver_info;
 	const char		*driver_name;
 	void			*driver_priv;
-	wait_queue_head_t	*wait;
+	wait_queue_head_t	wait;
 	struct mutex		phy_mutex;
 	unsigned char		suspend_count;
 	unsigned char		pkt_cnt, pkt_err;
@@ -59,7 +59,7 @@ struct usbnet {
 	unsigned		interrupt_count;
 	struct mutex		interrupt_mutex;
 	struct usb_anchor	deferred;
-	struct work_struct	bh_w;
+	struct tasklet_struct	bh;
 
 	struct work_struct	kevent;
 	unsigned long		flags;
@@ -137,9 +137,6 @@ struct driver_info {
 
 	/* link reset handling, called from defer_kevent */
 	int	(*link_reset)(struct usbnet *);
-
-	/*in case if usbnet wrapper wants to override rx_complete()*/
-	void (*rx_complete) (struct urb *);
 
 	/* fixup rx packet (strip framing) */
 	int	(*rx_fixup)(struct usbnet *dev, struct sk_buff *skb);
@@ -249,8 +246,6 @@ extern u32 usbnet_get_msglevel(struct net_device *);
 extern void usbnet_set_msglevel(struct net_device *, u32);
 extern void usbnet_get_drvinfo(struct net_device *, struct ethtool_drvinfo *);
 extern int usbnet_nway_reset(struct net_device *net);
-extern void usbnet_terminate_urbs(struct usbnet *dev);
-/* extern void rx_complete(struct urb *urb); */
 
 extern int usbnet_manage_power(struct usbnet *, int);
 extern void usbnet_link_change(struct usbnet *, bool, bool);
