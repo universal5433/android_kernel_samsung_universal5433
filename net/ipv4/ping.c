@@ -282,7 +282,7 @@ out_release_group:
 	return ret;
 }
 
-static void ping_close(struct sock *sk, long timeout)
+void ping_close(struct sock *sk, long timeout)
 {
 	pr_debug("ping_close(sk=%p,sk->num=%u)\n",
 		 inet_sk(sk), inet_sk(sk)->inet_num);
