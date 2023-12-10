@@ -1853,9 +1853,9 @@ err_parse_dt_nomem:
 
 static int sm5703_charger_remove(struct platform_device *pdev)
 {
+	struct sm5703_charger_data *charger;
 	pr_info("%s: SM5703 Charger driver remove\n", __func__);
-	struct sm5703_charger_data *charger =
-		platform_get_drvdata(pdev);
+	charger = platform_get_drvdata(pdev);
 	unregister_irq(pdev, charger);
 	power_supply_unregister(&charger->psy_chg);
 	destroy_workqueue(charger->wq);
