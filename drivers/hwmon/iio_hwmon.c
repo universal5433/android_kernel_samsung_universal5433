@@ -80,8 +80,13 @@ static int iio_hwmon_probe(struct platform_device *pdev)
 	struct iio_channel *channels;
 
 	channels = iio_channel_get_all(dev);
-	if (IS_ERR(channels))
-		return PTR_ERR(channels);
+	if (IS_ERR(channels)) { //https://patchwork.kernel.org/project/linux-hwmon/patch/1473344917-1524-2-git-send-email-quentin.schulz@free-electrons.com/#19593173
+		ret = PTR_ERR(channels);
+		if (ret == -ENODEV)
+			ret = -EPROBE_DEFER;
+		return dev_err_probe(dev, ret,
+				     "Failed to get channels\n");
+	}
 
 	st = devm_kzalloc(dev, sizeof(*st), GFP_KERNEL);
 	if (st == NULL) {
