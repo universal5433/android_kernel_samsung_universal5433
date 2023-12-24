@@ -66,6 +66,8 @@ static bool has_intersects_mems_allowed(struct task_struct *start,
 
 	rcu_read_lock();
 	for_each_thread(start, tsk) {
+	rcu_read_lock();
+	for_each_thread(start, tsk) {
 		if (mask) {
 			/*
 			 * If this is a mempolicy constrained oom, tsk's
@@ -117,7 +119,7 @@ struct task_struct *find_lock_task_mm(struct task_struct *p)
 	t = NULL;
 found:
 	rcu_read_unlock();
- 
+
 	return t;
 }
 
@@ -487,7 +489,6 @@ static struct task_struct *select_bad_process(unsigned int *ppoints,
 			chosen_points = points;
 		}
 	}
-
 	if (chosen)
 	{
 #ifdef CONFIG_OOM_SCAN_WA_PREVENT_WRONG_SEARCH
