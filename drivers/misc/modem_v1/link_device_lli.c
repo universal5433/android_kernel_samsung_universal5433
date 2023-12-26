@@ -588,20 +588,20 @@ static int init_pm(struct mem_link_device *mld)
 
 static void lli_link_reset(struct link_device *ld)
 {
-	mif_err("%s: PM %s <%pf>\n", ld->name, FUNC, CALLER);
+	mif_info("%s: PM %s <%pf>\n", ld->name, FUNC, CALLER);
 	mipi_lli_intr_enable();
 	mipi_lli_reset();
 }
 
 static void lli_link_reload(struct link_device *ld)
 {
-	mif_err("%s: PM %s <%pf>\n", ld->name, FUNC, CALLER);
+	mif_info("%s: PM %s <%pf>\n", ld->name, FUNC, CALLER);
 	mipi_lli_reload();
 }
 
 static void lli_link_off(struct link_device *ld)
 {
-	mif_err("%s: PM %s <%pf>\n", ld->name, FUNC, CALLER);
+	mif_info("%s: PM %s <%pf>\n", ld->name, FUNC, CALLER);
 	mipi_lli_intr_disable();
 	stop_pm(ld_to_mem_link_device(ld));
 }
@@ -802,7 +802,7 @@ struct link_device *lli_create_link_device(struct platform_device *pdev)
 		return NULL;
 	}
 
-	mif_err("MODEM:%s LINK:%s\n", modem->name, modem->link_name);
+	mif_info("MODEM:%s LINK:%s\n", modem->name, modem->link_name);
 
 	/**
 	 * Create a MEMORY link device instance
