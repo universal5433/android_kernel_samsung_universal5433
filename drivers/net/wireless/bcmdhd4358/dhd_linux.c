@@ -8867,6 +8867,11 @@ extern dhd_pub_t *link_recovery;
 void dhd_host_recover_link(void)
 {
 #if defined(BCMPCIE)
+	if (!link_recovery) {
+		printk("%s: link_recovery is NULL\n", __func__);
+		// Exit to avoid NPE
+		return;
+	}
 	link_recovery->hang_reason = HANG_REASON_PCIE_LINK_DOWN;
 	dhd_os_send_hang_message(link_recovery);
 #endif /* BCMPCIE */
