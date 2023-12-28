@@ -324,7 +324,7 @@ inline void log_ipc_pkt(enum ipc_layer layer, u8 ch, struct sk_buff *skb)
 print_log:
 	buflen = dump_skb(str, SZ_16, skb);
 
-	pr_info("%s: %s(%d): %s\n", MIF_TAG, layer_str(layer), buflen, str);
+	mif_debug("%s: %s(%d): %s\n", MIF_TAG, layer_str(layer), buflen, str);
 
 #ifndef CONFIG_SAMSUNG_PRODUCT_SHIP
 trace_log:
