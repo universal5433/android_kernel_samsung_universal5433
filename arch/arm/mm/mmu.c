@@ -713,7 +713,8 @@ static void __init __map_init_section(pmd_t *pmd, unsigned long addr,
 
 static void __init alloc_init_pmd(pud_t *pud, unsigned long addr,
 				      unsigned long end, phys_addr_t phys,
-				      const struct mem_type *type)
+				      const struct mem_type *type,
+				      bool force_pages)
 {
 	pmd_t *pmd = pmd_offset(pud, addr);
 	unsigned long next;
@@ -730,7 +731,8 @@ static void __init alloc_init_pmd(pud_t *pud, unsigned long addr,
 		 * aligned to a section boundary.
 		 */
 		if (type->prot_sect &&
-				((addr | next | phys) & ~SECTION_MASK) == 0) {
+				((addr | next | phys) & ~SECTION_MASK) == 0 &&
+				!force_pages) {
 			__map_init_section(pmd, addr, next, phys, type);
 		} else {
 			alloc_init_pte(pmd, addr, next,
@@ -744,14 +746,15 @@ static void __init alloc_init_pmd(pud_t *pud, unsigned long addr,
 
 static void __init alloc_init_pud(pgd_t *pgd, unsigned long addr,
 				  unsigned long end, phys_addr_t phys,
-				  const struct mem_type *type)
+				  const struct mem_type *type,
+				  bool force_pages)
 {
 	pud_t *pud = pud_offset(pgd, addr);
 	unsigned long next;
 
 	do {
 		next = pud_addr_end(addr, end);
-		alloc_init_pmd(pud, addr, next, phys, type);
+		alloc_init_pmd(pud, addr, next, phys, type, force_pages);
 		phys += next - addr;
 	} while (pud++, addr = next, addr != end);
 }
@@ -875,7 +878,7 @@ static void __init create_mapping(struct map_desc *md, bool force_pages)
 	do {
 		unsigned long next = pgd_addr_end(addr, end);
 
-		alloc_init_pud(pgd, addr, next, phys, type);
+		alloc_init_pud(pgd, addr, next, phys, type, force_pages);
 
 		phys += next - addr;
 		addr = next;
