@@ -126,7 +126,7 @@ static void set_wake_locked(int wake)
 
 	if (bt_wake_state != wake)
 	{
-		pr_err("[BT] set_wake_locked value = %d\n", wake);
+		pr_info("[BT] set_wake_locked value = %d\n", wake);
 		bt_wake_state = wake;
 	}
 }
