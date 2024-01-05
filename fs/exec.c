@@ -1272,12 +1272,7 @@ static int check_unsafe_exec(struct linux_binprm *bprm)
 }
 
 static void bprm_fill_uid(struct linux_binprm *bprm)
-static void bprm_fill_uid(struct linux_binprm *bprm)
 {
-	struct inode *inode;
-	unsigned int mode;
-	kuid_t uid;
-	kgid_t gid;
 	struct inode *inode;
 	unsigned int mode;
 	kuid_t uid;
@@ -1285,12 +1280,11 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 
 	/* clear any previous set[ug]id data from a previous binary */
 	bprm->cred->euid = current_euid();
-	bprm->cred->egid = current_egid();
 
 	if (bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID)
 		return;
 
-	if (current->no_new_privs)
+	if (task_no_new_privs(current))
 		return;
 
 	inode = file_inode(bprm->file);
