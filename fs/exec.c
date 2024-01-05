@@ -1280,7 +1280,6 @@ static void bprm_fill_uid(struct linux_binprm *bprm)
 
 	/* clear any previous set[ug]id data from a previous binary */
 	bprm->cred->euid = current_euid();
-	bprm->cred->egid = current_egid();
 
 	if (bprm->file->f_path.mnt->mnt_flags & MNT_NOSUID)
 		return;
