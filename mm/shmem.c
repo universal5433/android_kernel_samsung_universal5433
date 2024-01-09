@@ -1431,6 +1431,25 @@ out_nomem:
 
 static int shmem_mmap(struct file *file, struct vm_area_struct *vma)
 {
+        struct inode *inode = file->f_path.dentry->d_inode;
+	struct shmem_inode_info *info = SHMEM_I(inode);
+
+	if (info->seals & F_SEAL_FUTURE_WRITE) {
+		/*
+		 * New PROT_WRITE and MAP_SHARED mmaps are not allowed when
+		 * "future write" seal active.
+		 */
+		if ((vma->vm_flags & VM_SHARED) && (vma->vm_flags & VM_WRITE))
+			return -EPERM;
+
+		/*
+		 * Since the F_SEAL_FUTURE_WRITE seals allow for a MAP_SHARED
+		 * read-only mapping, take care to not allow mprotect to revert
+		 * protections.
+		 */
+		vma->vm_flags &= ~(VM_MAYWRITE);
+	}
+
 	file_accessed(file);
 #ifdef CONFIG_TIMA_IOMMU_OPT
 	if (vma->vm_end - vma->vm_start) {
@@ -1523,8 +1542,9 @@ shmem_write_begin(struct file *file, struct address_space *mapping,
 	pgoff_t index = pos >> PAGE_CACHE_SHIFT;
 
 	/* i_mutex is held by caller */
-	if (unlikely(info->seals)) {
-		if (info->seals & F_SEAL_WRITE)
+	if (unlikely(info->seals & (F_SEAL_GROW |
+				   F_SEAL_WRITE | F_SEAL_FUTURE_WRITE))) {
+		if (info->seals & (F_SEAL_WRITE | F_SEAL_FUTURE_WRITE))
 			return -EPERM;
 		if ((info->seals & F_SEAL_GROW) && pos + len > inode->i_size)
 			return -EPERM;
@@ -2018,7 +2038,8 @@ continue_resched:
 #define F_ALL_SEALS (F_SEAL_SEAL | \
 		     F_SEAL_SHRINK | \
 		     F_SEAL_GROW | \
-		     F_SEAL_WRITE)
+		     F_SEAL_WRITE | \
+		     F_SEAL_FUTURE_WRITE)
 
 int shmem_add_seals(struct file *file, unsigned int seals)
 {
