@@ -1528,6 +1528,12 @@ static noinline int btrfs_ioctl_snap_create_transid(struct file *file,
 			printk(KERN_INFO "btrfs: Snapshot src from "
 			       "another FS\n");
 			ret = -EINVAL;
+		} else if (!inode_owner_or_capable(src_inode)) {
+			/*
+			 * Subvolume creation is not restricted, but snapshots
+			 * are limited to own subvolumes only
+			 */
+			ret = -EPERM;
 		} else {
 			ret = btrfs_mksubvol(&file->f_path, name, namelen,
 					     BTRFS_I(src_inode)->root,
@@ -2565,6 +2571,11 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
 	/* if we extend to eof, continue to block boundary */
 	if (off + len == src->i_size)
 		len = ALIGN(src->i_size, bs) - off;
+
+	if (len == 0) {
+		ret = 0;
+		goto out_unlock;
+	}
 
 	/* verify the end result is block aligned */
 	if (!IS_ALIGNED(off, bs) || !IS_ALIGNED(off + len, bs) ||

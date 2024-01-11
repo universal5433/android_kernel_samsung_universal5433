@@ -5361,11 +5361,6 @@ static int nl80211_trigger_scan(struct sk_buff *skb, struct genl_info *info)
 			request->rates[i] =
 				(1 << wiphy->bands[i]->n_bitrates) - 1;
 
-	for (i = 0; i < IEEE80211_NUM_BANDS; i++)
-		if (wiphy->bands[i])
-			request->rates[i] =
-				(1 << wiphy->bands[i]->n_bitrates) - 1;
-
 	if (info->attrs[NL80211_ATTR_SCAN_SUPP_RATES]) {
 		nla_for_each_nested(attr,
 				    info->attrs[NL80211_ATTR_SCAN_SUPP_RATES],
@@ -6854,6 +6849,9 @@ void __cfg80211_send_event_skb(struct sk_buff *skb, gfp_t gfp)
 	struct cfg80211_registered_device *rdev = ((void **)skb->cb)[0];
 	void *hdr = ((void **)skb->cb)[1];
 	struct nlattr *data = ((void **)skb->cb)[2];
+
+	/* clear CB data for netlink core to own from now on */
+	memset(skb->cb, 0, sizeof(skb->cb));
 
 	nla_nest_end(skb, data);
 	genlmsg_end(skb, hdr);

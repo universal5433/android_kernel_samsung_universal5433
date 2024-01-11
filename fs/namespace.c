@@ -855,6 +855,21 @@ static struct mount *clone_mnt(struct mount *old, struct dentry *root,
 
 		if (mnt->mnt.mnt_flags & MNT_READONLY)
 			mnt->mnt.mnt_flags |= MNT_LOCK_READONLY;
+	if (flag & CL_UNPRIVILEGED) {
+		mnt->mnt.mnt_flags |= MNT_LOCK_ATIME;
+
+		if (mnt->mnt.mnt_flags & MNT_READONLY)
+			mnt->mnt.mnt_flags |= MNT_LOCK_READONLY;
+
+		if (mnt->mnt.mnt_flags & MNT_NODEV)
+			mnt->mnt.mnt_flags |= MNT_LOCK_NODEV;
+
+		if (mnt->mnt.mnt_flags & MNT_NOSUID)
+			mnt->mnt.mnt_flags |= MNT_LOCK_NOSUID;
+
+		if (mnt->mnt.mnt_flags & MNT_NOEXEC)
+			mnt->mnt.mnt_flags |= MNT_LOCK_NOEXEC;
+	}
 
 		if (mnt->mnt.mnt_flags & MNT_NODEV)
 			mnt->mnt.mnt_flags |= MNT_LOCK_NODEV;

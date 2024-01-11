@@ -112,12 +112,14 @@ static const char *ata_lpm_policy_names[] = {
 	[ATA_LPM_MIN_POWER]	= "min_power",
 };
 
-static ssize_t ata_scsi_lpm_store(struct device *dev,
+static ssize_t ata_scsi_lpm_store(struct device *device,
 				  struct device_attribute *attr,
 				  const char *buf, size_t count)
 {
-	struct Scsi_Host *shost = class_to_shost(dev);
+	struct Scsi_Host *shost = class_to_shost(device);
 	struct ata_port *ap = ata_shost_to_port(shost);
+	struct ata_link *link;
+	struct ata_device *dev;
 	enum ata_lpm_policy policy;
 	unsigned long flags;
 
@@ -133,10 +135,20 @@ static ssize_t ata_scsi_lpm_store(struct device *dev,
 		return -EINVAL;
 
 	spin_lock_irqsave(ap->lock, flags);
+
+	ata_for_each_link(link, ap, EDGE) {
+		ata_for_each_dev(dev, &ap->link, ENABLED) {
+			if (dev->horkage & ATA_HORKAGE_NOLPM) {
+				count = -EOPNOTSUPP;
+				goto out_unlock;
+			}
+		}
+	}
+
 	ap->target_lpm_policy = policy;
 	ata_port_schedule_eh(ap);
+out_unlock:
 	spin_unlock_irqrestore(ap->lock, flags);
-
 	return count;
 }
 
@@ -661,19 +673,18 @@ static int ata_ioc32(struct ata_port *ap)
 int ata_sas_scsi_ioctl(struct ata_port *ap, struct scsi_device *scsidev,
 		     int cmd, void __user *arg)
 {
-	int val = -EINVAL, rc = -EINVAL;
+	unsigned long val;
+	int rc = -EINVAL;
 	unsigned long flags;
 
 	switch (cmd) {
-	case ATA_IOC_GET_IO32:
+	case HDIO_GET_32BIT:
 		spin_lock_irqsave(ap->lock, flags);
 		val = ata_ioc32(ap);
 		spin_unlock_irqrestore(ap->lock, flags);
-		if (copy_to_user(arg, &val, 1))
-			return -EFAULT;
-		return 0;
+		return put_user(val, (unsigned long __user *)arg);
 
-	case ATA_IOC_SET_IO32:
+	case HDIO_SET_32BIT:
 		val = (unsigned long) arg;
 		rc = 0;
 		spin_lock_irqsave(ap->lock, flags);
@@ -2500,7 +2511,8 @@ static unsigned int ata_scsiop_read_cap(struct ata_scsi_args *args, u8 *rbuf)
 		rbuf[14] = (lowest_aligned >> 8) & 0x3f;
 		rbuf[15] = lowest_aligned;
 
-		if (ata_id_has_trim(args->id)) {
+		if (ata_id_has_trim(args->id) &&
+		    !(dev->horkage & ATA_HORKAGE_NOTRIM)) {
 			rbuf[14] |= 0x80; /* TPE */
 
 			if (ata_id_has_zero_after_trim(args->id))

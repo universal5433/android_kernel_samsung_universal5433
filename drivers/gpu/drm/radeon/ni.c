@@ -930,12 +930,12 @@ static void cayman_gpu_init(struct radeon_device *rdev)
 
 	if ((rdev->config.cayman.max_backends_per_se == 1) &&
 	    (rdev->flags & RADEON_IS_IGP)) {
-		if ((disabled_rb_mask & 3) == 1) {
-			/* RB0 disabled, RB1 enabled */
-			tmp = 0x11111111;
-		} else {
+		if ((disabled_rb_mask & 3) == 2) {
 			/* RB1 disabled, RB0 enabled */
 			tmp = 0x00000000;
+		} else {
+			/* RB0 disabled, RB1 enabled */
+			tmp = 0x11111111;
 		}
 	} else {
 		tmp = gb_addr_config & NUM_PIPES_MASK;
@@ -1178,13 +1178,12 @@ void cayman_fence_ring_emit(struct radeon_device *rdev,
 {
 	struct radeon_ring *ring = &rdev->ring[fence->ring];
 	u64 addr = rdev->fence_drv[fence->ring].gpu_addr;
+	u32 cp_coher_cntl = PACKET3_FULL_CACHE_ENA | PACKET3_TC_ACTION_ENA |
+		PACKET3_SH_ACTION_ENA;
 
 	/* flush read cache over gart for this vmid */
-	radeon_ring_write(ring, PACKET3(PACKET3_SET_CONFIG_REG, 1));
-	radeon_ring_write(ring, (CP_COHER_CNTL2 - PACKET3_SET_CONFIG_REG_START) >> 2);
-	radeon_ring_write(ring, 0);
 	radeon_ring_write(ring, PACKET3(PACKET3_SURFACE_SYNC, 3));
-	radeon_ring_write(ring, PACKET3_TC_ACTION_ENA | PACKET3_SH_ACTION_ENA);
+	radeon_ring_write(ring, PACKET3_ENGINE_ME | cp_coher_cntl);
 	radeon_ring_write(ring, 0xFFFFFFFF);
 	radeon_ring_write(ring, 0);
 	radeon_ring_write(ring, 10); /* poll interval */
@@ -1200,6 +1199,8 @@ void cayman_fence_ring_emit(struct radeon_device *rdev,
 void cayman_ring_ib_execute(struct radeon_device *rdev, struct radeon_ib *ib)
 {
 	struct radeon_ring *ring = &rdev->ring[ib->ring];
+	u32 cp_coher_cntl = PACKET3_FULL_CACHE_ENA | PACKET3_TC_ACTION_ENA |
+		PACKET3_SH_ACTION_ENA;
 
 	/* set to DX10/11 mode */
 	radeon_ring_write(ring, PACKET3(PACKET3_MODE_CONTROL, 0));
@@ -1224,14 +1225,11 @@ void cayman_ring_ib_execute(struct radeon_device *rdev, struct radeon_ib *ib)
 			  (ib->vm ? (ib->vm->id << 24) : 0));
 
 	/* flush read cache over gart for this vmid */
-	radeon_ring_write(ring, PACKET3(PACKET3_SET_CONFIG_REG, 1));
-	radeon_ring_write(ring, (CP_COHER_CNTL2 - PACKET3_SET_CONFIG_REG_START) >> 2);
-	radeon_ring_write(ring, ib->vm ? ib->vm->id : 0);
 	radeon_ring_write(ring, PACKET3(PACKET3_SURFACE_SYNC, 3));
-	radeon_ring_write(ring, PACKET3_TC_ACTION_ENA | PACKET3_SH_ACTION_ENA);
+	radeon_ring_write(ring, PACKET3_ENGINE_ME | cp_coher_cntl);
 	radeon_ring_write(ring, 0xFFFFFFFF);
 	radeon_ring_write(ring, 0);
-	radeon_ring_write(ring, 10); /* poll interval */
+	radeon_ring_write(ring, ((ib->vm ? ib->vm->id : 0) << 24) | 10); /* poll interval */
 }
 
 void cayman_uvd_semaphore_emit(struct radeon_device *rdev,

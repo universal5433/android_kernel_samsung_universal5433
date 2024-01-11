@@ -1,4 +1,3 @@
-
 #include <linux/ceph/ceph_debug.h>
 
 #include <linux/err.h>
@@ -721,5 +720,3 @@ out_nomem:
 out:
 	return ret;
 }
-
-
